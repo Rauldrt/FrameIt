@@ -18,8 +18,13 @@ export function ApiKeyGuard({ children }: { children: React.ReactNode }) {
         setHasKey(false);
       }
     } else {
-      // If we are not in the AI Studio environment, assume true and let standard environment vars take over
-      setHasKey(true);
+      // If we are not in the AI Studio environment, check for standard environment variable
+      const standardKey = process.env.GEMINI_API_KEY;
+      if (!standardKey || standardKey === 'undefined' || standardKey === 'MY_GEMINI_API_KEY') {
+        setHasKey(false);
+      } else {
+        setHasKey(true);
+      }
     }
   };
 
@@ -53,14 +58,22 @@ export function ApiKeyGuard({ children }: { children: React.ReactNode }) {
             <span className="text-blue-400">✧</span> Configuración Requerida
           </h2>
           <p className="text-stone-300">
-            Esta aplicación utiliza modelos avanzados de Google (<strong>Gemini 3 Pro Image Preview</strong> y <strong>Veo Video Generation</strong>) que requieren el uso de tu propia clave API con un proyecto de facturación de Google Cloud.
+            Esta aplicación utiliza modelos avanzados de Google (<strong>Gemini 1.5 Pro</strong>) que requieren el uso de tu propia clave API.
           </p>
-          <p className="text-stone-400 text-sm bg-stone-900 p-4 rounded-xl">
-            Para obtener más información sobre la configuración de facturación, consulta la{' '}
-            <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 underline">
-              documentación oficial
-            </a>.
-          </p>
+          {process.env.GEMINI_API_KEY === undefined || process.env.GEMINI_API_KEY === 'undefined' ? (
+            <div className="text-stone-400 text-sm bg-stone-900 p-4 rounded-xl space-y-2">
+              <p className="text-amber-400 font-bold">⚠️ Error de Configuración:</p>
+              <p>No se detectó la variable <code>GEMINI_API_KEY</code> en el entorno.</p>
+              <p>Si estás en Vercel, asegúrate de añadirla en: <br/> <strong>Project Settings &gt; Environment Variables</strong>.</p>
+            </div>
+          ) : (
+            <p className="text-stone-400 text-sm bg-stone-900 p-4 rounded-xl">
+              Para obtener más información sobre la configuración de facturación, consulta la{' '}
+              <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 underline">
+                documentación oficial
+              </a>.
+            </p>
+          )}
           <button
             onClick={selectKey}
             className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors shadow-lg shadow-blue-500/20"
