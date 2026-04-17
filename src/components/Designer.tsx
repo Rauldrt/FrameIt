@@ -19,6 +19,7 @@ export function Designer() {
   const [referenceImages, setReferenceImages] = useState<{data: string, mimeType: string, url: string}[]>([]);
   const [isUploadCardOpen, setIsUploadCardOpen] = useState(true);
   const [isGenerateCardOpen, setIsGenerateCardOpen] = useState(true);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user, signIn } = useAuth();
 
@@ -136,8 +137,9 @@ export function Designer() {
         imageData: frameSrc,
         createdAt: serverTimestamp()
       });
-      // Redirect to the end-user app using this frame ID
-      navigate(`/app?frame=${docRef.id}`);
+      // Set the published URL but stay on page to show the link
+      const url = `${window.location.origin}/app?frame=${docRef.id}`;
+      setPublishedUrl(url);
     } catch (err) {
       console.error(err);
       handleFirestoreError(err, OperationType.CREATE, 'shared_frames');
@@ -280,10 +282,42 @@ export function Designer() {
           </div>
           </div>
 
-          <div className="lg:col-span-2 order-1 lg:order-2 flex flex-col gap-4">
+         <div className="lg:col-span-2 order-1 lg:order-2 flex flex-col gap-4">
             <CanvasEditor frameSrc={frameSrc} photoSrc={photoSrc} />
             
-            {frameSrc && (
+            {publishedUrl && (
+              <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-2xl flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center gap-2 text-emerald-400">
+                  <Sparkles className="w-5 h-5" />
+                  <span className="font-bold">¡Marco publicado con éxito!</span>
+                </div>
+                <p className="text-sm text-stone-400">Comparte este enlace con los participantes para que lo usen:</p>
+                <div className="flex gap-2">
+                  <input 
+                    readOnly 
+                    value={publishedUrl} 
+                    className="flex-1 bg-stone-900 border border-stone-700 rounded-lg px-3 py-2 text-xs text-stone-300 focus:outline-none"
+                  />
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(publishedUrl);
+                      alert('Enlace copiado al portapapeles');
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Copiar
+                  </button>
+                </div>
+                <Link 
+                  to={publishedUrl.replace(window.location.origin, '')}
+                  className="text-xs text-emerald-500 hover:underline flex items-center gap-1 justify-center"
+                >
+                  Probar como usuario <ArrowLeft className="w-3 h-3 rotate-180" />
+                </Link>
+              </div>
+            )}
+
+            {frameSrc && !publishedUrl && (
               <div className="flex justify-end">
                 <button
                   onClick={handleSendToApp}

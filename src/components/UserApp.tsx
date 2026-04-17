@@ -33,6 +33,8 @@ export function UserApp() {
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             setFrameSrc(docSnap.data().imageData);
+            setIsFrameCardOpen(false);
+            setIsPhotoCardOpen(true);
           } else {
             console.warn("Shared frame not found");
           }
@@ -174,7 +176,7 @@ export function UserApp() {
             <Link to="/" className="p-2 hover:bg-stone-800 rounded-full transition-colors">
               <ArrowLeft className="w-6 h-6" />
             </Link>
-            <h1 className="text-2xl font-bold text-white">Wanda Tupi Trail Cam</h1>
+            <h1 className="text-2xl font-bold text-white">FrameIt</h1>
           </div>
           <div className="flex items-center gap-4">
             {!user && searchParams.get('frame') && (

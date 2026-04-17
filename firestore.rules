@@ -64,7 +64,7 @@ service cloud.firestore {
     // ===============================================================
 
     match /shared_frames/{frameId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow create: if isAuthenticated() && 
                     isValidSharedFrame(request.resource.data) && 
                     uidUnchanged();
