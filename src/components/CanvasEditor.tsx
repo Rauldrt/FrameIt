@@ -3,7 +3,8 @@ import {
   Download, Share2, Move, ZoomIn, RotateCw, FlipHorizontal, Layers, 
   Type, Palette, Plus, X, Eraser, Wand2, ChevronDown, ChevronUp, 
   Undo2, Redo2, Sliders, Smartphone, Square, Sticker as StickerIcon,
-  Sun, Contrast, Droplets, Image as ImageIcon, Trash2, RotateCcw
+  Sun, Contrast, Droplets, Image as ImageIcon, Trash2, RotateCcw,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -575,7 +576,6 @@ export function CanvasEditor({
     setActiveLayer(newId);
     saveToHistory(newState);
     setExpandedSections(prev => ({ ...prev, adjust: true }));
-  };
   };
 
   const addStickerLayer = (emoji: string) => {

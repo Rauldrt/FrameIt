@@ -1,7 +1,7 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React from 'react';
 
 interface Props {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 interface State {
@@ -9,11 +9,19 @@ interface State {
   errorMsg: string | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    errorMsg: null,
-  };
+export class ErrorBoundary extends React.Component<Props, State> {
+  // Explicitly declared to satisfy strict environment or specific compiler versions
+  public state: State;
+  public props: Props;
+
+  constructor(props: Props) {
+    super(props);
+    this.props = props;
+    this.state = {
+      hasError: false,
+      errorMsg: null,
+    };
+  }
 
   public static getDerivedStateFromError(error: Error): State {
     let msg = error.message;
@@ -24,11 +32,11 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, errorMsg: msg };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
   }
 
-  public render() {
+  public render(): React.ReactNode {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-stone-900 text-white p-6">

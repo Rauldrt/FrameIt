@@ -35,7 +35,7 @@ export function Designer() {
   };
 
   const handleReferenceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+    const files = Array.from(e.target.files || []) as File[];
     files.forEach(file => {
       const reader = new FileReader();
       reader.onload = (event) => {
