@@ -1,0 +1,32 @@
+{
+  "entities": {
+    "SharedFrame": {
+      "title": "SharedFrame",
+      "description": "Represents a generated or uploaded frame to be shared with users.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The UID of the user who created the frame"
+        },
+        "imageData": {
+          "type": "string",
+          "description": "The base64 encoded image data of the frame"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "description": "Timestamp when the frame was created"
+        }
+      },
+      "required": ["uid", "imageData", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/shared_frames/{frameId}": {
+      "schema": {
+        "$ref": "#/entities/SharedFrame"
+      },
+      "description": "Stores the shared frames."
+    }
+  }
+}
