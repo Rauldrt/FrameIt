@@ -215,6 +215,7 @@ export function CanvasEditor({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [initialPinch, setInitialPinch] = useState<{dist: number, angle: number, zoom: number, rotation: number} | null>(null);
   const [activeTab, setActiveTab] = useState<'none' | 'layers' | 'stickers' | 'filters' | 'adjust'>('none');
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
 
   const [isProcessingErase, setIsProcessingErase] = useState(false);
   const photoImgRef = useRef<HTMLImageElement | null>(null);
@@ -1020,15 +1021,21 @@ export function CanvasEditor({
           </div>
         )}
 
+        {/* Intermediary Actions: Save & Share */}
+        {activeTab === 'none' && (
+          <div className="flex gap-4 mb-4 pointer-events-auto animate-in fade-in slide-in-from-bottom-2">
+             <button onClick={handleDownload} className="bg-stone-800/80 backdrop-blur-xl border border-stone-700 text-white font-medium px-6 py-3 rounded-full flex items-center gap-2 shadow-lg hover:bg-stone-700 transition-colors">
+               <Download className="w-5 h-5"/> Guardar
+             </button>
+             <button onClick={handleShare} className="bg-emerald-500/90 backdrop-blur-xl border border-emerald-400/50 text-white font-bold px-6 py-3 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(52,211,153,0.4)] hover:bg-emerald-400 transition-colors">
+               <Share2 className="w-5 h-5"/> Compartir
+             </button>
+          </div>
+        )}
+
         <div className="bg-stone-900/95 backdrop-blur-xl border border-stone-700/50 p-2.5 rounded-full flex gap-3 shadow-[0_0_25px_rgba(52,211,153,0.3)] pointer-events-auto items-center">
            <button onClick={() => setActiveTab(activeTab === 'layers' ? 'none' : 'layers')} className={cn("p-3 rounded-full transition-all", activeTab === 'layers' ? "bg-stone-800 text-emerald-400" : "text-stone-400 hover:bg-stone-800 hover:text-stone-200")}>
              <Layers className="w-5 h-5"/>
-           </button>
-           <button onClick={() => setActiveTab(activeTab === 'stickers' ? 'none' : 'stickers')} className={cn("p-3 rounded-full transition-all", activeTab === 'stickers' ? "bg-stone-800 text-amber-400" : "text-stone-400 hover:bg-stone-800 hover:text-stone-200")}>
-             <StickerIcon className="w-5 h-5"/>
-           </button>
-           <button onClick={() => { addTextLayer(); setActiveTab('adjust'); }} className={cn("p-3 rounded-full transition-all", activeLayer.startsWith('text-') && activeTab === 'adjust' ? "bg-stone-800 text-purple-400" : "text-stone-400 hover:bg-stone-800 hover:text-stone-200")} title="Añadir Texto">
-             <Type className="w-5 h-5"/>
            </button>
            <button onClick={() => setActiveTab(activeTab === 'filters' ? 'none' : 'filters')} className={cn("p-3 rounded-full transition-all", activeTab === 'filters' ? "bg-stone-800 text-blue-400" : "text-stone-400 hover:bg-stone-800 hover:text-stone-200")}>
              <Sliders className="w-5 h-5"/>
@@ -1051,6 +1058,23 @@ export function CanvasEditor({
               </button>
            )}
         </div>
+      </div>
+
+      {/* Floating Action Button (FAB) for Add Elements */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-auto">
+        {isAddMenuOpen && (
+          <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2">
+            <button onClick={() => { addTextLayer(); setIsAddMenuOpen(false); }} className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform" title="Añadir Texto">
+              <Type className="w-5 h-5"/>
+            </button>
+            <button onClick={() => { setActiveTab('stickers'); setIsAddMenuOpen(false); }} className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform" title="Añadir Sticker">
+              <StickerIcon className="w-5 h-5"/>
+            </button>
+          </div>
+        )}
+        <button onClick={() => setIsAddMenuOpen(!isAddMenuOpen)} className="w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(52,211,153,0.4)] hover:scale-105 transition-all">
+          <Plus className={cn("w-6 h-6 transition-transform duration-300", isAddMenuOpen && "rotate-45")} />
+        </button>
       </div>
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 5px; }
