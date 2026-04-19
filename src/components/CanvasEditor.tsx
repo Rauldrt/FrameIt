@@ -500,6 +500,19 @@ export function CanvasEditor({
     drawCanvas();
   };
 
+  const isPointInLayer = (px: number, py: number, state: any, width: number, height: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return false;
+    let lx = px - (canvas.width / 2 + state.x);
+    let ly = py - (canvas.height / 2 + state.y);
+    const angle = -(state.rotation * Math.PI) / 180;
+    const rx = lx * Math.cos(angle) - ly * Math.sin(angle);
+    const ry = lx * Math.sin(angle) + ly * Math.cos(angle);
+    const sx = rx / (state.flip * state.zoom);
+    const sy = ry / state.zoom;
+    return sx >= -width / 2 && sx <= width / 2 && sy >= -height / 2 && sy <= height / 2;
+  };
+
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const point = getEventPoint(e);
     if (eraseMode !== 'none') {
@@ -507,6 +520,30 @@ export function CanvasEditor({
       handleEraseAction(point);
       return;
     }
+
+    // Hit test to select elements (Texts & Stickers)
+    if (!('touches' in e) || e.touches.length === 1) {
+      let selectedLayer: string | null = null;
+      for (let i = editorState.textLayers.length - 1; i >= 0; i--) {
+        if (isPointInLayer(point.x, point.y, editorState.textLayers[i], 400, 80)) {
+          selectedLayer = editorState.textLayers[i].id;
+          break;
+        }
+      }
+      if (!selectedLayer) {
+        for (let i = editorState.stickerLayers.length - 1; i >= 0; i--) {
+          if (isPointInLayer(point.x, point.y, editorState.stickerLayers[i], 100, 100)) {
+            selectedLayer = editorState.stickerLayers[i].id;
+            break;
+          }
+        }
+      }
+      if (selectedLayer && selectedLayer !== activeLayer) {
+        setActiveLayer(selectedLayer);
+        setActiveTab('adjust');
+      }
+    }
+
     setIsDragging(true);
 
     if ('touches' in e && e.touches.length === 2 && eraseMode === 'none') {
