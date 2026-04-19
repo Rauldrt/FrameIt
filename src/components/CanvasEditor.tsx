@@ -62,6 +62,7 @@ interface CanvasEditorProps {
   isGeneratingVideo?: boolean;
   showTextTools?: boolean;
   photoAnalysis?: string | null;
+  onFrameModified?: (dataUrl: string) => void;
 }
 
 const INITIAL_LAYER_STATE: CommonLayerState = { 
@@ -98,7 +99,8 @@ export function CanvasEditor({
   onGenerateVideo, 
   isGeneratingVideo, 
   showTextTools = false,
-  photoAnalysis = null
+  photoAnalysis = null,
+  onFrameModified
 }: CanvasEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -157,10 +159,13 @@ export function CanvasEditor({
     };
   }, []);
 
-  // Save to local storage on change
+  // Save to local storage on change and notify parent of frame modifications
   useEffect(() => {
     localStorage.setItem('frameit_editor_state', JSON.stringify(editorState));
-  }, [editorState]);
+    if (onFrameModified && editorState.frameCanvasData) {
+      onFrameModified(editorState.frameCanvasData);
+    }
+  }, [editorState, onFrameModified]);
 
   const saveToHistory = useCallback((state: EditorState) => {
     if (isInternalChange.current) return;
@@ -558,12 +563,22 @@ export function CanvasEditor({
       const blob = await new Promise<Blob | null>(res => canvas.toBlob(res, 'image/png'));
       if (!blob) return;
       const file = new File([blob], 'frameit.png', { type: 'image/png' });
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ title: 'FrameIt', text: '¡Mira mi creación!', files: [file] });
+      const shareData = { title: 'FrameIt', text: '¡Mira mi creación con FrameIt!', files: [file] };
+
+      // Navigator.canShare es undefined en viejas versiones, no dependemos estrictamente de él.
+      if (navigator.share && (!navigator.canShare || navigator.canShare(shareData))) {
+        await navigator.share(shareData);
       } else {
-        alert('Copia el link o descarga la imagen.');
+        alert('Tu navegador/dispositivo no soporta compartir imágenes de forma nativa. La imagen se descargará automáticamente para que puedas compartirla donde quieras.');
+        handleDownload(); // Fallback a descarga
       }
-    } catch (err) { console.error(err); }
+    } catch (err: any) { 
+      console.error('Error al compartir:', err); 
+      if (err.name !== 'AbortError') {
+        alert('Hubo un error al intentar compartir la imagen. Procedemos a descargarla.');
+        handleDownload();
+      }
+    }
   };
 
   const addTextLayer = () => {

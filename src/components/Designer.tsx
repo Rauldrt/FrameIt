@@ -8,6 +8,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export function Designer() {
   const [frameSrc, setFrameSrc] = useState<string | null>(null);
+  const [modifiedFrameSrc, setModifiedFrameSrc] = useState<string | null>(null);
   const [photoSrc, setPhotoSrc] = useState<string | null>(null);
   const [showSample, setShowSample] = useState(false);
   const [prompt, setPrompt] = useState('');
@@ -28,6 +29,7 @@ export function Designer() {
       const reader = new FileReader();
       reader.onload = (event) => {
         setFrameSrc(event.target?.result as string);
+        setModifiedFrameSrc(null); // Reset upon new upload
         setIsUploadCardOpen(false);
       };
       reader.readAsDataURL(file);
@@ -79,6 +81,7 @@ export function Designer() {
         setError("No se pudo generar la imagen. Intenta con otro prompt.");
       } else {
         setFrameSrc(`data:image/png;base64,${data.base64Image}`);
+        setModifiedFrameSrc(null); // Reset upon new generate
         setIsGenerateCardOpen(false);
       }
     } catch (err: any) {
@@ -116,10 +119,13 @@ export function Designer() {
     setIsPublishing(true);
     setError(null);
     try {
+      // Usar el marco modificado (transparente) si existe, sino el original
+      const finalFrame = modifiedFrameSrc || frameSrc;
+      
       // Create a document in Firestore
       const docRef = await addDoc(collection(db, 'shared_frames'), {
         uid: user.uid,
-        imageData: frameSrc,
+        imageData: finalFrame,
         createdAt: serverTimestamp()
       });
       // Set the published URL but stay on page to show the link
@@ -268,7 +274,11 @@ export function Designer() {
           </div>
 
          <div className="lg:col-span-2 order-1 lg:order-2 flex flex-col gap-4">
-            <CanvasEditor frameSrc={frameSrc} photoSrc={photoSrc} />
+            <CanvasEditor 
+              frameSrc={frameSrc} 
+              photoSrc={photoSrc} 
+              onFrameModified={setModifiedFrameSrc}
+            />
             
             {publishedUrl && (
               <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-2xl flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
