@@ -200,85 +200,8 @@ export function UserApp() {
           </div>
         )}
 
-        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 space-y-6 flex flex-col order-2 lg:order-1">
-            <div className="bg-stone-800 rounded-2xl border border-stone-700 overflow-hidden">
-              <button 
-                onClick={() => setIsPhotoCardOpen(!isPhotoCardOpen)}
-                className="w-full p-5 flex items-center justify-between text-left hover:bg-stone-700/50 transition-colors"
-                type="button"
-              >
-                <h2 className="text-base md:text-lg font-medium text-white flex items-center gap-2">
-                  <ImageIcon className="w-5 h-5 text-blue-400" />
-                  Tu Foto
-                </h2>
-                {isPhotoCardOpen ? <ChevronUp className="w-5 h-5 text-stone-400" /> : <ChevronDown className="w-5 h-5 text-stone-400" />}
-              </button>
-              
-              {isPhotoCardOpen && (
-                <div className="px-5 pb-5 space-y-4 border-t border-stone-700/50 pt-4">
-                  <div className="flex gap-2">
-                <label className="flex-1 flex flex-col items-center justify-center h-24 px-4 transition bg-stone-900 border-2 border-stone-700 border-dashed rounded-xl appearance-none cursor-pointer hover:border-blue-500/50">
-                  <Upload className="w-5 h-5 text-stone-500 mb-2" />
-                  <span className="font-medium text-stone-500 text-xs text-center">Subir foto</span>
-                  <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
-                </label>
-
-                <label className="flex-1 flex flex-col items-center justify-center h-24 px-4 transition bg-stone-900 border-2 border-stone-700 border-dashed rounded-xl appearance-none cursor-pointer hover:border-blue-500/50">
-                  <Camera className="w-5 h-5 text-stone-500 mb-2" />
-                  <span className="font-medium text-stone-500 text-xs text-center">Tomar foto</span>
-                  <input type="file" className="hidden" accept="image/*" capture="environment" onChange={handlePhotoUpload} />
-                </label>
-              </div>
-
-              {photoSrc && (
-                <button
-                  onClick={analyzePhoto}
-                  disabled={isAnalyzing}
-                  className="w-full py-2 flex items-center justify-center gap-2 bg-stone-700 hover:bg-stone-600 text-white rounded-lg transition-colors text-sm"
-                >
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  {isAnalyzing ? 'Analizando...' : 'Analizar Foto con Gemini'}
-                </button>
-              )}
-              
-              {analysis && (
-                <div className="p-3 bg-stone-900 rounded-lg text-sm text-stone-300 border border-stone-700">
-                  {analysis}
-                </div>
-              )}
-            </div>
-            )}
-            </div>
-
-            <div className="bg-stone-800 rounded-2xl border border-stone-700 overflow-hidden">
-              <button 
-                onClick={() => setIsFrameCardOpen(!isFrameCardOpen)}
-                className="w-full p-5 flex items-center justify-between text-left hover:bg-stone-700/50 transition-colors"
-                type="button"
-              >
-                <h2 className="text-base md:text-lg font-medium text-white flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-emerald-400" />
-                  Marco del Evento
-                </h2>
-                {isFrameCardOpen ? <ChevronUp className="w-5 h-5 text-stone-400" /> : <ChevronDown className="w-5 h-5 text-stone-400" />}
-              </button>
-              
-              {isFrameCardOpen && (
-                <div className="px-5 pb-5 space-y-4 border-t border-stone-700/50 pt-4">
-                  <label className="flex items-center justify-center w-full h-24 px-4 transition bg-stone-900 border-2 border-stone-700 border-dashed rounded-xl appearance-none cursor-pointer hover:border-emerald-500/50">
-                <span className="flex items-center space-x-2">
-                  <Upload className="w-5 h-5 text-stone-500" />
-                  <span className="font-medium text-stone-500">Subir marco (PNG)</span>
-                </span>
-                <input type="file" className="hidden" accept="image/png" onChange={handleFrameUpload} />
-              </label>
-            </div>
-            )}
-            </div>
-          </div>
-
-          <div className="lg:col-span-2 order-1 lg:order-2">
+        <div className="flex flex-col gap-4">
+          <div className="w-full">
             <CanvasEditor 
               frameSrc={frameSrc} 
               photoSrc={photoSrc} 
@@ -286,6 +209,9 @@ export function UserApp() {
               isGeneratingVideo={isGeneratingVideo}
               showTextTools={true}
               photoAnalysis={analysis}
+              onPhotoUpload={handlePhotoUpload}
+              onAnalyzePhoto={analyzePhoto}
+              isAnalyzing={isAnalyzing}
             />
           </div>
         </div>

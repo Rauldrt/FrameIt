@@ -4,7 +4,7 @@ import {
   Type, Palette, Plus, X, Eraser, Wand2, ChevronDown, ChevronUp, 
   Undo2, Redo2, Sliders, Smartphone, Square, Sticker as StickerIcon,
   Sun, Contrast, Droplets, Image as ImageIcon, Trash2, RotateCcw,
-  Sparkles
+  Sparkles, Upload, Camera
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -63,6 +63,9 @@ interface CanvasEditorProps {
   showTextTools?: boolean;
   photoAnalysis?: string | null;
   onFrameModified?: (dataUrl: string) => void;
+  onPhotoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onAnalyzePhoto?: () => void;
+  isAnalyzing?: boolean;
 }
 
 const INITIAL_LAYER_STATE: CommonLayerState = { 
@@ -100,7 +103,10 @@ export function CanvasEditor({
   isGeneratingVideo, 
   showTextTools = false,
   photoAnalysis = null,
-  onFrameModified
+  onFrameModified,
+  onPhotoUpload,
+  onAnalyzePhoto,
+  isAnalyzing = false
 }: CanvasEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -207,10 +213,8 @@ export function CanvasEditor({
   const [eraseMode, setEraseMode] = useState<'none' | 'manual' | 'magic'>('none');
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-
-  const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
-  };
+  const [initialPinch, setInitialPinch] = useState<{dist: number, angle: number, zoom: number, rotation: number} | null>(null);
+  const [activeTab, setActiveTab] = useState<'none' | 'layers' | 'stickers' | 'filters' | 'adjust'>('none');
 
   const [isProcessingErase, setIsProcessingErase] = useState(false);
   const photoImgRef = useRef<HTMLImageElement | null>(null);
@@ -504,6 +508,22 @@ export function CanvasEditor({
       return;
     }
     setIsDragging(true);
+
+    if ('touches' in e && e.touches.length === 2 && eraseMode === 'none') {
+      const dx = e.touches[1].clientX - e.touches[0].clientX;
+      const dy = e.touches[1].clientY - e.touches[0].clientY;
+      const dist = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+      const currentState = activeLayer === 'photo' ? editorState.photoState :
+                           activeLayer === 'frame' ? editorState.frameState :
+                           activeLayer.startsWith('text-') ? editorState.textLayers.find(t => t.id === activeLayer)! :
+                           activeLayer.startsWith('sticker-') ? editorState.stickerLayers.find(s => s.id === activeLayer)! :
+                           INITIAL_LAYER_STATE;
+
+      setInitialPinch({ dist, angle, zoom: currentState.zoom, rotation: currentState.rotation });
+      return;
+    }
+
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     setDragStart({ x: clientX, y: clientY });
@@ -516,6 +536,32 @@ export function CanvasEditor({
       handleEraseAction(point);
       return;
     }
+    if ('touches' in e && e.touches.length === 2 && initialPinch) {
+      const dxDist = e.touches[1].clientX - e.touches[0].clientX;
+      const dyDist = e.touches[1].clientY - e.touches[0].clientY;
+      const currentDist = Math.hypot(dxDist, dyDist);
+      const currentAngle = Math.atan2(dyDist, dxDist) * (180 / Math.PI);
+
+      const zoomRatio = currentDist / initialPinch.dist;
+      let angleDelta = currentAngle - initialPinch.angle;
+
+      setEditorState(prev => {
+        let next = { ...prev };
+        const updateTransform = (state: any) => ({
+          ...state,
+          zoom: initialPinch.zoom * zoomRatio,
+          rotation: initialPinch.rotation + angleDelta
+        });
+
+        if (activeLayer === 'photo') next.photoState = updateTransform(prev.photoState);
+        else if (activeLayer === 'frame') next.frameState = updateTransform(prev.frameState);
+        else if (activeLayer.startsWith('text-')) next.textLayers = prev.textLayers.map(t => t.id === activeLayer ? updateTransform(t) : t);
+        else if (activeLayer.startsWith('sticker-')) next.stickerLayers = prev.stickerLayers.map(s => s.id === activeLayer ? updateTransform(s) : s);
+        return next;
+      });
+      return;
+    }
+
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     const dx = clientX - dragStart.x, dy = clientY - dragStart.y, sensitivity = 2;
@@ -545,6 +591,7 @@ export function CanvasEditor({
       saveToHistory(editorState);
     }
     setIsDragging(false);
+    setInitialPinch(null);
   };
 
   const handleDownload = () => {
@@ -661,6 +708,18 @@ export function CanvasEditor({
         {/* Undo/Redo & Presets Toolbar */}
         <div className="w-full max-w-[500px] mb-4 flex justify-between items-center px-1">
           <div className="flex gap-2">
+            {onPhotoUpload && (
+              <>
+                <label className="p-2 bg-stone-800 rounded-lg text-emerald-400 hover:bg-stone-700 transition-all cursor-pointer shadow-[0_0_10px_rgba(52,211,153,0.3)] hover:shadow-[0_0_15px_rgba(52,211,153,0.5)]" title="Subir Foto">
+                  <Upload className="w-5 h-5" />
+                  <input type="file" className="hidden" accept="image/*" onChange={onPhotoUpload} />
+                </label>
+                <label className="p-2 bg-stone-800 rounded-lg text-emerald-400 hover:bg-stone-700 transition-all cursor-pointer shadow-[0_0_10px_rgba(52,211,153,0.3)] hover:shadow-[0_0_15px_rgba(52,211,153,0.5)]" title="Tomar Foto">
+                  <Camera className="w-5 h-5" />
+                  <input type="file" className="hidden" accept="image/*" capture="environment" onChange={onPhotoUpload} />
+                </label>
+              </>
+            )}
             <button 
               onClick={undo} 
               disabled={historyIndex <= 0}
@@ -751,250 +810,209 @@ export function CanvasEditor({
         )}
       </div>
 
-      <div className="w-full lg:w-80 flex flex-col gap-4 max-h-[85vh] overflow-y-auto pr-2 custom-scrollbar">
-        {/* Layers Section */}
-        <div className="bg-stone-800 rounded-2xl border border-stone-700 overflow-hidden text-left shadow-lg">
-          <button onClick={() => toggleSection('layers')} className="w-full p-4 flex items-center justify-between hover:bg-stone-700/50 transition-colors">
-            <h3 className="text-base font-medium text-white flex items-center gap-2">
-              <Layers className="w-5 h-5 text-emerald-400" /> Capas
-            </h3>
-            {expandedSections.layers ? <ChevronUp className="w-5 h-5 text-stone-400" /> : <ChevronDown className="w-5 h-5 text-stone-400" />}
-          </button>
-          {expandedSections.layers && (
-            <div className="px-4 pb-5 flex flex-col gap-2 border-t border-stone-700/50 pt-4">
-              {editorState.textLayers.map((t, index) => (
-                <div key={t.id} className="flex bg-stone-900 rounded-lg p-1">
-                  <button onClick={() => setActiveLayer(t.id)} className={cn("flex-1 py-2.5 px-3 text-sm font-medium rounded-md transition-colors flex items-center justify-between", activeLayer === t.id ? "bg-stone-700 text-white ring-1 ring-emerald-500/30" : "text-stone-400 hover:text-stone-200")}>
-                    <span className="truncate max-w-[150px]"><Type className="w-4 h-4 inline-block mr-2 opacity-50" /> {t.text || `Texto ${index + 1}`}</span>
-                    <X className="w-4 h-4 opacity-50 hover:text-red-400" onClick={(e) => removeLayer(t.id, e)} />
-                  </button>
-                </div>
-              ))}
-              {editorState.stickerLayers.map((s) => (
-                <div key={s.id} className="flex bg-stone-900 rounded-lg p-1">
-                  <button onClick={() => setActiveLayer(s.id)} className={cn("flex-1 py-2.5 px-3 text-sm font-medium rounded-md transition-colors flex items-center justify-between", activeLayer === s.id ? "bg-stone-700 text-white ring-1 ring-emerald-500/30" : "text-stone-400 hover:text-stone-200")}>
-                    <span><StickerIcon className="w-4 h-4 inline-block mr-2 opacity-50" /> Sticker {s.emoji}</span>
-                    <X className="w-4 h-4 opacity-50 hover:text-red-400" onClick={(e) => removeLayer(s.id, e)} />
-                  </button>
-                </div>
-              ))}
-              <div className="flex bg-stone-900 rounded-lg p-1">
-                <button onClick={() => setActiveLayer('frame')} className={cn("flex-1 py-2.5 px-3 text-sm font-medium rounded-md transition-colors flex items-center", activeLayer === 'frame' ? "bg-stone-700 text-white ring-1 ring-emerald-500/30" : "text-stone-400 hover:text-stone-200")}>
-                  <Square className="w-4 h-4 mr-2 opacity-50" /> Capa Marco
-                </button>
-              </div>
-              <div className="flex bg-stone-900 rounded-lg p-1">
-                <button onClick={() => setActiveLayer('photo')} className={cn("flex-1 py-2.5 px-3 text-sm font-medium rounded-md transition-colors flex items-center", activeLayer === 'photo' ? "bg-stone-700 text-white ring-1 ring-emerald-500/30" : "text-stone-400 hover:text-stone-200")}>
-                  <ImageIcon className="w-4 h-4 mr-2 opacity-50" /> Capa Foto Base
-                </button>
-              </div>
+      {/* Floating UI Editor Tools (Material Design 3 Style) */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-4 w-[95vw] md:w-auto pointer-events-none">
+        
+        {activeTab !== 'none' && (
+          <div className="w-full md:w-[380px] bg-stone-900 border border-stone-800 rounded-3xl p-5 shadow-[0_0_40px_rgba(52,211,153,0.15)] animate-in slide-in-from-bottom-4 fade-in duration-300 pointer-events-auto">
+            <div className="flex justify-between items-center mb-4 border-b border-stone-800 pb-3">
+              <h3 className="text-white font-medium capitalize flex items-center gap-2">
+                {activeTab === 'layers' && <><Layers className="w-5 h-5 text-emerald-400" /> Capas</>}
+                {activeTab === 'stickers' && <><StickerIcon className="w-5 h-5 text-amber-400" /> Stickers</>}
+                {activeTab === 'filters' && <><Sliders className="w-5 h-5 text-blue-400" /> Filtros</>}
+                {activeTab === 'adjust' && <><Move className="w-5 h-5 text-purple-400" /> Ajustes</>}
+              </h3>
+              <button onClick={() => setActiveTab('none')} className="text-stone-400 hover:text-white transition-colors bg-stone-800 p-1.5 rounded-full"><X className="w-4 h-4"/></button>
             </div>
-          )}
-        </div>
 
-        {/* Stickers Section */}
-        <div className="bg-stone-800 rounded-2xl border border-stone-700 overflow-hidden text-left shadow-lg">
-          <button onClick={() => toggleSection('stickers')} className="w-full p-4 flex items-center justify-between hover:bg-stone-700/50 transition-colors">
-            <h3 className="text-base font-medium text-white flex items-center gap-2">
-              <StickerIcon className="w-5 h-5 text-amber-400" /> Stickers
-            </h3>
-            {expandedSections.stickers ? <ChevronUp className="w-5 h-5 text-stone-400" /> : <ChevronDown className="w-5 h-5 text-stone-400" />}
-          </button>
-          {expandedSections.stickers && (
-            <div className="px-4 pb-5 space-y-4 border-t border-stone-700/50 pt-4">
-              {photoAnalysis && (
-                <div className="space-y-2">
-                  <span className="text-stone-400 text-[10px] uppercase tracking-wider font-bold flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-amber-400" /> Sugeridos por IA
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {(() => {
-                      const suggestions: string[] = [];
-                      const text = photoAnalysis.toLowerCase();
-                      if (text.includes('corriendo') || text.includes('runner') || text.includes('corredor')) suggestions.push('🏃', '👟', '🏁');
-                      if (text.includes('montaña') || text.includes('mountain') || text.includes('cerro')) suggestions.push('⛰️', '🧗');
-                      if (text.includes('bosque') || text.includes('selva') || text.includes('árbol')) suggestions.push('🌲', '🐆', '🐒');
-                      if (text.includes('barro') || text.includes('sucio')) suggestions.push('💩', '💦');
-                      if (text.includes('feliz') || text.includes('sonrisa') || text.includes('emoción')) suggestions.push('😊', '✨', '🙌');
-                      if (text.includes('calor') || text.includes('sol')) suggestions.push('☀️', '🔥', '💧');
-                      
-                      return suggestions.length > 0 ? (
-                        suggestions.map(emoji => (
-                          <button key={`ai-${emoji}`} onClick={() => addStickerLayer(emoji)} className="w-10 h-10 bg-blue-500/10 border border-blue-500/30 rounded-lg text-xl flex items-center justify-center hover:bg-blue-500/20 transition-colors">
-                            {emoji}
-                          </button>
-                        ))
-                      ) : <span className="text-stone-500 text-[10px]">Analiza tu foto para ver sugerencias</span>;
-                    })()}
+            <div className="max-h-[50vh] overflow-y-auto custom-scrollbar pr-2 space-y-4">
+              {activeTab === 'layers' && (
+                <div className="flex flex-col gap-2">
+                  {editorState.textLayers.map((t, index) => (
+                    <div key={t.id} className="flex bg-stone-900 border border-stone-800 rounded-xl overflow-hidden">
+                      <button onClick={() => setActiveLayer(t.id)} className={cn("flex-1 py-3 px-4 text-sm font-medium transition-colors flex items-center justify-between", activeLayer === t.id ? "bg-stone-800 text-emerald-400" : "text-stone-400 hover:text-stone-200")}>
+                        <span className="truncate max-w-[150px]"><Type className="w-4 h-4 inline-block mr-2 opacity-50" /> {t.text || `Texto ${index + 1}`}</span>
+                        <X className="w-4 h-4 hover:text-red-400" onClick={(e) => removeLayer(t.id, e)} />
+                      </button>
+                    </div>
+                  ))}
+                  {editorState.stickerLayers.map((s) => (
+                    <div key={s.id} className="flex bg-stone-900 border border-stone-800 rounded-xl overflow-hidden">
+                      <button onClick={() => setActiveLayer(s.id)} className={cn("flex-1 py-3 px-4 text-sm font-medium transition-colors flex items-center justify-between", activeLayer === s.id ? "bg-stone-800 text-emerald-400" : "text-stone-400 hover:text-stone-200")}>
+                        <span><StickerIcon className="w-4 h-4 inline-block mr-2 opacity-50" /> Sticker {s.emoji}</span>
+                        <X className="w-4 h-4 hover:text-red-400" onClick={(e) => removeLayer(s.id, e)} />
+                      </button>
+                    </div>
+                  ))}
+                  <div className="flex bg-stone-900 border border-stone-800 rounded-xl overflow-hidden">
+                    <button onClick={() => setActiveLayer('frame')} className={cn("flex-1 py-3 px-4 text-sm font-medium transition-colors flex items-center", activeLayer === 'frame' ? "bg-stone-800 text-emerald-400" : "text-stone-400 hover:text-stone-200")}>
+                      <Square className="w-4 h-4 mr-2 opacity-50" /> Capa Marco
+                    </button>
+                  </div>
+                  <div className="flex bg-stone-900 border border-stone-800 rounded-xl overflow-hidden">
+                    <button onClick={() => setActiveLayer('photo')} className={cn("flex-1 py-3 px-4 text-sm font-medium transition-colors flex items-center", activeLayer === 'photo' ? "bg-stone-800 text-emerald-400" : "text-stone-400 hover:text-stone-200")}>
+                      <ImageIcon className="w-4 h-4 mr-2 opacity-50" /> Capa Foto Base
+                    </button>
                   </div>
                 </div>
               )}
 
-              <div className="space-y-2">
-                <span className="text-stone-400 text-[10px] uppercase tracking-wider font-bold">Biblioteca</span>
-                <div className="grid grid-cols-5 gap-2">
-                  {STICKER_OPTIONS.map(emoji => (
-                    <button key={emoji} onClick={() => addStickerLayer(emoji)} className="aspect-square bg-stone-900 rounded-lg text-2xl flex items-center justify-center hover:bg-stone-700 transition-colors shadow-sm">
-                      {emoji}
+              {activeTab === 'stickers' && (
+                <div className="space-y-6">
+                  {photoAnalysis && (
+                    <div className="space-y-3">
+                      <span className="text-stone-400 text-xs uppercase tracking-wider font-bold flex items-center gap-1">
+                        <Sparkles className="w-4 h-4 text-amber-400" /> Sugeridos por IA
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {(() => {
+                          const suggestions: string[] = [];
+                          const text = photoAnalysis.toLowerCase();
+                          if (text.includes('corriendo') || text.includes('runner')) suggestions.push('🏃', '👟', '🏁');
+                          if (text.includes('montaña') || text.includes('mountain')) suggestions.push('⛰️', '🧗');
+                          if (text.includes('bosque') || text.includes('selva')) suggestions.push('🌲', '🐆', '🐒');
+                          if (text.includes('barro') || text.includes('sucio')) suggestions.push('💩', '💦');
+                          if (text.includes('feliz') || text.includes('sonrisa')) suggestions.push('😊', '✨', '🙌');
+                          if (text.includes('calor') || text.includes('sol')) suggestions.push('☀️', '🔥', '💧');
+                          return suggestions.length > 0 ? (
+                            suggestions.map(emoji => (
+                              <button key={`ai-${emoji}`} onClick={() => addStickerLayer(emoji)} className="w-12 h-12 bg-blue-500/10 border border-blue-500/30 rounded-xl text-2xl flex items-center justify-center hover:bg-blue-500/20 transition-transform hover:scale-110">
+                                {emoji}
+                              </button>
+                            ))
+                          ) : <span className="text-stone-500 text-xs">Analiza tu foto para sugerencias</span>;
+                        })()}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <span className="text-stone-400 text-xs uppercase tracking-wider font-bold">Biblioteca</span>
+                    <div className="grid grid-cols-5 gap-3">
+                      {STICKER_OPTIONS.map(emoji => (
+                        <button key={emoji} onClick={() => addStickerLayer(emoji)} className="aspect-square bg-stone-800 rounded-xl text-3xl flex items-center justify-center hover:bg-stone-700 transition-transform shadow-sm hover:scale-110">
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'filters' && (activeLayer === 'photo' || activeLayer === 'frame') && (
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <span className="text-stone-400 text-xs uppercase tracking-wider font-bold">Presets Rápidos</span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {FILTER_PRESETS.map(preset => (
+                        <button key={preset.name} onClick={() => setActiveLayerState(prev => ({ ...prev, ...preset }))} className="py-2 px-2 bg-stone-800 hover:bg-stone-700 border border-stone-700/50 rounded-xl text-xs text-stone-300 transition-all font-medium text-center">
+                          {preset.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-5 pt-4 border-t border-stone-800">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs font-medium"><span className="text-emerald-400 flex items-center gap-2"><Sun className="w-4 h-4"/> Brillo</span><span className="text-stone-300">{activeState.brightness}%</span></div>
+                      <input type="range" min="0" max="200" value={activeState.brightness} onChange={(e) => setActiveLayerState(prev => ({ ...prev, brightness: parseInt(e.target.value) }))} className="w-full accent-emerald-500 h-2 bg-stone-800 rounded-lg appearance-none" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs font-medium"><span className="text-emerald-400 flex items-center gap-2"><Contrast className="w-4 h-4"/> Contraste</span><span className="text-stone-300">{activeState.contrast}%</span></div>
+                      <input type="range" min="0" max="200" value={activeState.contrast} onChange={(e) => setActiveLayerState(prev => ({ ...prev, contrast: parseInt(e.target.value) }))} className="w-full accent-emerald-500 h-2 bg-stone-800 rounded-lg appearance-none" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs font-medium"><span className="text-emerald-400 flex items-center gap-2"><Droplets className="w-4 h-4"/> Saturación</span><span className="text-stone-300">{activeState.saturation}%</span></div>
+                      <input type="range" min="0" max="200" value={activeState.saturation} onChange={(e) => setActiveLayerState(prev => ({ ...prev, saturation: parseInt(e.target.value) }))} className="w-full accent-emerald-500 h-2 bg-stone-800 rounded-lg appearance-none" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'adjust' && (
+                <div className="space-y-6">
+                  {activeLayer.startsWith('text-') && (
+                    <div className="space-y-5">
+                      <div className="space-y-3">
+                        <span className="text-emerald-400 text-xs font-semibold uppercase tracking-wider block">Contenido</span>
+                        <input type="text" value={activeState.text} onChange={(e) => setActiveLayerState(prev => ({ ...prev, text: e.target.value }))} className="w-full bg-stone-800 border-2 border-stone-700/50 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all" />
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <span className="text-emerald-400 text-xs font-semibold uppercase tracking-wider block">Tipografía</span>
+                        <div className="grid grid-cols-2 gap-2">
+                          {FONT_OPTIONS.map(font => (
+                            <button key={font.name} onClick={() => setActiveLayerState(prev => ({ ...prev, fontFamily: font.family }))} className={cn("py-2.5 px-3 rounded-xl border-2 text-xs transition-all", activeState.fontFamily === font.family ? "bg-emerald-500/20 border-emerald-500 text-emerald-400" : "bg-stone-800 border-transparent text-stone-300 hover:border-stone-600")} style={{ fontFamily: font.family }}>
+                              {font.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <span className="text-emerald-400 text-xs font-semibold uppercase tracking-wider block">Aparencia</span>
+                        <div className="flex flex-wrap gap-3 p-3 bg-stone-800 rounded-xl">
+                          {COLOR_OPTIONS.map(color => (
+                            <button key={color} onClick={() => setActiveLayerState(prev => ({ ...prev, color }))} className={cn("w-8 h-8 rounded-full transition-transform transform shadow-sm", activeState.color === color ? "scale-125 ring-2 ring-emerald-500 ring-offset-2 ring-offset-stone-900" : "hover:scale-110")} style={{ backgroundColor: color }} />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        {(['none', 'shadow', 'outline'] as const).map(effect => (
+                          <button key={effect} onClick={() => setActiveLayerState(prev => ({ ...prev, effect }))} className={cn("flex-1 py-2 px-2 rounded-xl text-xs font-medium capitalize transition-all", activeState.effect === effect ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30" : "bg-stone-800 text-stone-400 hover:text-stone-200")}>
+                            {effect === 'none' ? 'Plano' : effect === 'shadow' ? 'Sombra' : 'Borde'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-xs text-stone-500 text-center font-medium bg-stone-800/50 p-3 rounded-xl">
+                    💡 Usa dos dedos sobre la imagen para hacer zoom y rotar.
+                  </p>
+                  <div className="flex gap-2 pt-2 border-t border-stone-800">
+                    <button onClick={() => setActiveLayerState(prev => ({ ...prev, flip: prev.flip * -1 }))} className="flex-1 py-3 bg-stone-800 hover:bg-stone-700 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                      <FlipHorizontal className="w-4 h-4 text-blue-400" /> Reflejar
                     </button>
-                  ))}
+                    <button onClick={() => removeLayer(activeLayer, { stopPropagation: () => {} } as any)} className="flex-1 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                      <Trash2 className="w-4 h-4" /> Eliminar
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <button 
-                onClick={addTextLayer}
-                className="w-full mt-2 py-3 flex items-center justify-center gap-2 bg-stone-900 hover:bg-stone-700 border border-stone-700 border-dashed text-white rounded-lg transition-all text-xs font-medium"
-              >
-                <Plus className="w-3.5 h-3.5 text-emerald-400" /> Añadir Texto
-              </button>
+              )}
             </div>
-          )}
-        </div>
-
-        {/* Filters Section */}
-        {(activeLayer === 'photo' || activeLayer === 'frame') && (
-          <div className="bg-stone-800 rounded-2xl border border-stone-700 overflow-hidden text-left shadow-lg">
-            <button onClick={() => toggleSection('filters')} className="w-full p-4 flex items-center justify-between hover:bg-stone-700/50 transition-colors">
-              <h3 className="text-base font-medium text-white flex items-center gap-2">
-                <Sliders className="w-5 h-5 text-blue-400" /> Filtros e IA
-              </h3>
-              {expandedSections.filters ? <ChevronUp className="w-5 h-5 text-stone-400" /> : <ChevronDown className="w-5 h-5 text-stone-400" />}
-            </button>
-            {expandedSections.filters && (
-              <div className="px-4 pb-5 space-y-4 border-t border-stone-700/50 pt-4">
-                <div className="space-y-2">
-                  <span className="text-stone-400 text-[10px] uppercase tracking-wider font-bold">Presets</span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {FILTER_PRESETS.map(preset => (
-                      <button
-                        key={preset.name}
-                        onClick={() => setActiveLayerState(prev => ({ ...prev, ...preset }))}
-                        className="py-1.5 px-2 bg-stone-900 hover:bg-stone-700 border border-stone-700 rounded-lg text-[10px] text-stone-300 transition-all font-medium"
-                      >
-                        {preset.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-2 border-t border-stone-700/30">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs"><span className="text-stone-400 flex items-center gap-1"><Sun className="w-3.5 h-3.5"/> Brillo</span><span className="text-stone-300">{activeState.brightness}%</span></div>
-                    <input type="range" min="0" max="200" value={activeState.brightness} onChange={(e) => setActiveLayerState(prev => ({ ...prev, brightness: parseInt(e.target.value) }))} className="w-full accent-emerald-500 h-1.5" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs"><span className="text-stone-400 flex items-center gap-1"><Contrast className="w-3.5 h-3.5"/> Contraste</span><span className="text-stone-300">{activeState.contrast}%</span></div>
-                    <input type="range" min="0" max="200" value={activeState.contrast} onChange={(e) => setActiveLayerState(prev => ({ ...prev, contrast: parseInt(e.target.value) }))} className="w-full accent-emerald-500 h-1.5" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs"><span className="text-stone-400 flex items-center gap-1"><Droplets className="w-3.5 h-3.5"/> Saturación</span><span className="text-stone-300">{activeState.saturation}%</span></div>
-                    <input type="range" min="0" max="200" value={activeState.saturation} onChange={(e) => setActiveLayerState(prev => ({ ...prev, saturation: parseInt(e.target.value) }))} className="w-full accent-emerald-500 h-1.5" />
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Adjustments Section */}
-        <div className="bg-stone-800 rounded-2xl border border-stone-700 overflow-hidden text-left shadow-lg">
-          <button onClick={() => toggleSection('adjust')} className="w-full p-4 flex items-center justify-between hover:bg-stone-700/50 transition-colors">
-            <h3 className="text-base font-medium text-white flex items-center gap-2">
-              <Move className="w-5 h-5 text-emerald-400" /> Ajustes Capa
-            </h3>
-            {expandedSections.adjust ? <ChevronUp className="w-5 h-5 text-stone-400" /> : <ChevronDown className="w-5 h-5 text-stone-400" />}
-          </button>
-          {expandedSections.adjust && (
-            <div className="px-4 pb-5 space-y-4 border-t border-stone-700/50 pt-4">
-              {activeLayer.startsWith('text-') && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <span className="text-stone-400 text-xs text-left block font-medium">Contenido</span>
-                    <input type="text" value={activeState.text} onChange={(e) => setActiveLayerState(prev => ({ ...prev, text: e.target.value }))} className="w-full bg-stone-900 border border-stone-700 rounded-lg px-3 py-2.5 text-sm text-white focus:ring-1 focus:ring-emerald-500 outline-none" />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <span className="text-stone-400 text-xs text-left block font-medium">Tipografía</span>
-                    <div className="grid grid-cols-2 gap-2">
-                      {FONT_OPTIONS.map(font => (
-                        <button 
-                          key={font.name}
-                          onClick={() => setActiveLayerState(prev => ({ ...prev, fontFamily: font.family }))}
-                          className={cn(
-                            "py-1.5 px-2 rounded-md border text-[10px] transition-all",
-                            activeState.fontFamily === font.family ? "bg-emerald-500/20 border-emerald-500 text-emerald-400" : "bg-stone-900 border-stone-700 text-stone-400 hover:border-stone-500"
-                          )}
-                          style={{ fontFamily: font.family }}
-                        >
-                          {font.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <span className="text-stone-400 text-xs text-left block font-medium">Color</span>
-                    <div className="flex flex-wrap gap-2">
-                      {COLOR_OPTIONS.map(color => (
-                        <button 
-                          key={color}
-                          onClick={() => setActiveLayerState(prev => ({ ...prev, color }))}
-                          className={cn(
-                            "w-6 h-6 rounded-full border-2 transition-all transform hover:scale-110",
-                            activeState.color === color ? "border-emerald-500 scale-110" : "border-stone-700"
-                          )}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <span className="text-stone-400 text-xs text-left block font-medium">Efecto</span>
-                    <div className="flex gap-2">
-                      {(['none', 'shadow', 'outline'] as const).map(effect => (
-                        <button 
-                          key={effect}
-                          onClick={() => setActiveLayerState(prev => ({ ...prev, effect }))}
-                          className={cn(
-                            "flex-1 py-1 px-2 rounded-md border text-[10px] capitalize transition-all",
-                            activeState.effect === effect ? "bg-emerald-500/20 border-emerald-500 text-emerald-400" : "bg-stone-900 border-stone-700 text-stone-400 hover:border-stone-500"
-                          )}
-                        >
-                          {effect === 'none' ? 'Sin efecto' : effect === 'shadow' ? 'Sombra' : 'Borde'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-medium"><span className="text-stone-400 flex items-center gap-1"><ZoomIn className="w-3.5 h-3.5"/> Zoom</span><span className="text-stone-300">{activeState.zoom?.toFixed(2)}x</span></div>
-                <input type="range" min="0.1" max="5" step="0.01" value={activeState.zoom} onChange={(e) => setActiveLayerState(prev => ({ ...prev, zoom: parseFloat(e.target.value) }))} className="w-full accent-emerald-500 h-1" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-medium"><span className="text-stone-400 flex items-center gap-1"><RotateCw className="w-3.5 h-3.5"/> Rotación</span><span className="text-stone-300">{activeState.rotation}°</span></div>
-                <input type="range" min="-180" max="180" value={activeState.rotation} onChange={(e) => setActiveLayerState(prev => ({ ...prev, rotation: parseInt(e.target.value) }))} className="w-full accent-emerald-500 h-1" />
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button onClick={() => setActiveLayerState(prev => ({ ...prev, flip: prev.flip * -1 }))} className="flex-1 py-2.5 bg-stone-700 hover:bg-stone-600 text-white rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-2">
-                  <FlipHorizontal className="w-3.5 h-3.5" /> Reflejar
-                </button>
-                <button onClick={() => removeLayer(activeLayer, { stopPropagation: () => {} } as any)} className="py-2.5 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-medium transition-colors border border-red-500/20">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex gap-3 mt-auto">
-          <button onClick={handleDownload} disabled={!photoSrc && !frameSrc} className="flex-1 py-3 flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-xl transition-colors font-medium text-sm shadow-xl shadow-emerald-500/10">
-            <Download className="w-4 h-4" /> Guardar
-          </button>
-          <button onClick={handleShare} disabled={!photoSrc && !frameSrc} className="flex-1 py-3 flex items-center justify-center gap-2 bg-stone-700 hover:bg-stone-600 disabled:opacity-50 text-white rounded-xl transition-colors font-medium border border-stone-600 text-sm">
-            <Share2 className="w-4 h-4" /> Compartir
-          </button>
+        <div className="bg-stone-900/95 backdrop-blur-xl border border-stone-700/50 p-2.5 rounded-full flex gap-3 shadow-[0_0_25px_rgba(52,211,153,0.3)] pointer-events-auto items-center">
+           <button onClick={() => setActiveTab(activeTab === 'layers' ? 'none' : 'layers')} className={cn("p-3 rounded-full transition-all", activeTab === 'layers' ? "bg-stone-800 text-emerald-400" : "text-stone-400 hover:bg-stone-800 hover:text-stone-200")}>
+             <Layers className="w-5 h-5"/>
+           </button>
+           <button onClick={() => setActiveTab(activeTab === 'stickers' ? 'none' : 'stickers')} className={cn("p-3 rounded-full transition-all", activeTab === 'stickers' ? "bg-stone-800 text-amber-400" : "text-stone-400 hover:bg-stone-800 hover:text-stone-200")}>
+             <StickerIcon className="w-5 h-5"/>
+           </button>
+           <button onClick={() => { addTextLayer(); setActiveTab('adjust'); }} className={cn("p-3 rounded-full transition-all", activeLayer.startsWith('text-') && activeTab === 'adjust' ? "bg-stone-800 text-purple-400" : "text-stone-400 hover:bg-stone-800 hover:text-stone-200")} title="Añadir Texto">
+             <Type className="w-5 h-5"/>
+           </button>
+           <button onClick={() => setActiveTab(activeTab === 'filters' ? 'none' : 'filters')} className={cn("p-3 rounded-full transition-all", activeTab === 'filters' ? "bg-stone-800 text-blue-400" : "text-stone-400 hover:bg-stone-800 hover:text-stone-200")}>
+             <Sliders className="w-5 h-5"/>
+           </button>
+           <button onClick={() => setActiveTab(activeTab === 'adjust' ? 'none' : 'adjust')} className={cn("p-3 rounded-full transition-all", activeTab === 'adjust' ? "bg-stone-800 text-pink-400" : "text-stone-400 hover:bg-stone-800 hover:text-stone-200")}>
+             <Move className="w-5 h-5"/>
+           </button>
+           
+           {onAnalyzePhoto && photoSrc && (
+             <div className="w-px h-8 bg-stone-700 mx-1 rounded-full"></div>
+           )}
+           {onAnalyzePhoto && photoSrc && (
+              <button 
+                onClick={onAnalyzePhoto} 
+                disabled={isAnalyzing}
+                className="p-3 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 rounded-full transition-all disabled:opacity-50"
+                title="Analizar Foto con IA"
+              >
+                <Sparkles className={cn("w-5 h-5", isAnalyzing && "animate-spin")} />
+              </button>
+           )}
         </div>
       </div>
       <style>{`
