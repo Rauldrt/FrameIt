@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { ArrowLeft, Upload, Sparkles, Image as ImageIcon, X, Send, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CanvasEditor } from './CanvasEditor';
-import { GoogleGenAI } from '@google/genai';
 import { useAuth } from '../contexts/AuthContext';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -58,49 +57,35 @@ export function Designer() {
     setIsGenerating(true);
     setError(null);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      
-      const parts: any[] = referenceImages.map(img => ({
-        inlineData: { data: img.data, mimeType: img.mimeType }
-      }));
-      parts.push({ text: `A decorative frame for a trail running event called "Wanda Tupi Trail". The frame MUST have a transparent center area for a photo. Style: ${prompt}` });
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-image-preview',
-        contents: { parts },
-        config: {
-          imageConfig: {
-            aspectRatio: "1:1",
-            imageSize: imageSize
+      const res = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'generateFrame',
+          payload: {
+            prompt,
+            referenceImages,
+            imageSize
           }
-        }
+        })
       });
-      
-      let foundImage = false;
-      for (const part of response.candidates?.[0]?.content?.parts || []) {
-        if (part.inlineData) {
-          const base64EncodeString = part.inlineData.data;
-          setFrameSrc(`data:image/png;base64,${base64EncodeString}`);
-          foundImage = true;
-          break;
-        }
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Error en el servidor');
       }
-      
-      if (!foundImage) {
+
+      if (!data.base64Image) {
         setError("No se pudo generar la imagen. Intenta con otro prompt.");
       } else {
+        setFrameSrc(`data:image/png;base64,${data.base64Image}`);
         setIsGenerateCardOpen(false);
       }
     } catch (err: any) {
       console.error(err);
       const errorMessage = err?.message || String(err);
-      if (err?.status === 429 || errorMessage.includes('429') || errorMessage.includes('credits are depleted') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
-        setError("Error de límite de cuota (429): Tus créditos de prueba gratuitos se han agotado o necesitas recargar saldo en tu cuenta de Google Cloud / AI Studio.");
-      } else if (err?.status === 403 || errorMessage.includes('permission') || errorMessage.includes('403')) {
-        setError("Error de permisos (403): Asegúrate de haber habilitado las APIs necesarias (Ej. Imagen on Vertex AI) o revisa tu clave API.");
-        // We can optionally trigger the dialog again
-        // @ts-expect-error aistudio environment variable
-        window.aistudio?.openSelectKey?.();
+      if (errorMessage.includes('429') || errorMessage.includes('credits are depleted') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
+        setError("Error de límite de cuota (429): Tus créditos se han agotado.");
       } else {
         setError(`Error al generar el marco: ${errorMessage}`);
       }

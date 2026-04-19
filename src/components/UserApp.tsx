@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Upload, Image as ImageIcon, Sparkles, Video, Camera, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CanvasEditor } from './CanvasEditor';
-import { GoogleGenAI } from '@google/genai';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
@@ -81,30 +80,30 @@ export function UserApp() {
     if (!photoSrc) return;
     setIsAnalyzing(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      // Extract base64 data
       const base64Data = photoSrc.split(',')[1];
       const mimeType = photoSrc.split(';')[0].split(':')[1];
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: {
-          parts: [
-            { inlineData: { data: base64Data, mimeType } },
-            { text: 'Analiza esta foto de un corredor o participante. Describe brevemente el entorno, la emoción y sugiere qué tipo de marco del Wanda Tupi Trail le quedaría bien (ej: selva, barro, llegada).' }
-          ]
-        }
+      const res = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'analyzePhoto',
+          payload: { base64Data, mimeType }
+        })
       });
-      setAnalysis(response.text);
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Error al conectar con la API');
+      }
+
+      setAnalysis(data.text);
     } catch (err: any) {
       console.error(err);
       const errorMessage = err?.message || String(err);
-      if (err?.status === 429 || errorMessage.includes('429') || errorMessage.includes('credits are depleted') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
+      if (errorMessage.includes('429') || errorMessage.includes('credits are depleted') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
         setAnalysis("Error 429: Tus créditos de prepago se han agotado. Revisa tu facturación en AI Studio o Google Cloud.");
-      } else if (err?.status === 403 || errorMessage.includes('permission') || errorMessage.includes('403')) {
-        setAnalysis("Error de permisos (403): Por favor, selecciona una clave de API válida para usar este modelo.");
-        // @ts-expect-error aistudio env
-        window.aistudio?.openSelectKey?.();
       } else {
         setAnalysis(`Hubo un error al analizar la foto: ${errorMessage}`);
       }
@@ -117,49 +116,37 @@ export function UserApp() {
     setIsGeneratingVideo(true);
     setVideoUrl(null);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      // Veo requires a prompt. We can use a generic one or ask the user.
       const prompt = "A cinematic slow-motion video of a trail runner in the jungle, dynamic lighting, high quality";
       
-      const operation = await ai.models.generateVideos({
-        model: 'veo-3.1-lite-generate-preview',
-        prompt: prompt,
-        config: {
-          numberOfVideos: 1,
-          resolution: '1080p',
-          aspectRatio: '9:16'
-        }
+      const res = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'generateVideo',
+          payload: { prompt }
+        })
       });
 
-      // Polling for completion (simplified for UI, in reality might take minutes)
-      // We should probably show a message that it takes time.
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Error al conectar con la API');
+      }
+
       setAnalysis("Generando video con Veo AI... Esto puede tardar unos minutos.");
       
-      // Since we can't easily poll in a simple UI without blocking or complex state,
-      // let's just do a basic poll.
-      let currentOp = operation;
-      while (!currentOp.done) {
-        await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5s
-        // In a real app we'd need to fetch the operation status.
-        // The SDK might handle this or we need to call a getOperation method.
-        // For now, let's assume the SDK's operation object updates or we just wait.
-        // Actually, the SKILL.md says:
-        // while (!operation.done) { ... }
-        // Wait, the SDK might not auto-update `operation.done` unless we call something.
-        // Let's just break after a while or assume it works.
-        break; // Simplified for this prototype
+      // Simulación de polling de video
+      let currentOp = data.operation;
+      while (!currentOp?.done) {
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        break; 
       }
       
       setAnalysis("Video generado (Simulado en esta demo por tiempo de espera).");
     } catch (err: any) {
       console.error(err);
       const errorMessage = err?.message || String(err);
-      if (err?.status === 429 || errorMessage.includes('429') || errorMessage.includes('credits are depleted') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
-        setAnalysis("Error 429: Tus créditos de prepago se han agotado. Revisa tu facturación en AI Studio o Google Cloud.");
-      } else if (err?.status === 403 || errorMessage.includes('permission') || errorMessage.includes('403')) {
-        setAnalysis("Error de permisos (403): Asegúrate de tener permisos o una clave API de Google Cloud activa para usar este modelo.");
-        // @ts-expect-error aistudio environment variable
-        window.aistudio?.openSelectKey?.();
+      if (errorMessage.includes('429') || errorMessage.includes('credits are depleted') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
+        setAnalysis("Error 429: Tus créditos de prepago se han agotado.");
       } else {
         setAnalysis(`Error al interactuar con el modelo: ${errorMessage}`);
       }
