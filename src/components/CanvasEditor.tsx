@@ -539,9 +539,14 @@ export function CanvasEditor({
           }
         }
       }
-      if (selectedLayer && selectedLayer !== activeLayer) {
-        setActiveLayer(selectedLayer);
-        setActiveTab('adjust');
+      if (selectedLayer) {
+        if (selectedLayer !== activeLayer) {
+          setActiveLayer(selectedLayer);
+        }
+      } else {
+        if (activeLayer.startsWith('text-') || activeLayer.startsWith('sticker-')) {
+          setActiveLayer('frame');
+        }
       }
     }
 
@@ -740,6 +745,30 @@ export function CanvasEditor({
   const canvasWidth = editorState.aspectRatio === '1:1' ? 1080 : 1080;
   const canvasHeight = editorState.aspectRatio === '1:1' ? 1080 : 1920;
 
+  const getQuickActionStyle = (): React.CSSProperties | undefined => {
+    if (!activeLayer || activeLayer === 'photo' || activeLayer === 'frame') return undefined;
+    const state = editorState.textLayers.find(t => t.id === activeLayer) || editorState.stickerLayers.find(s => s.id === activeLayer);
+    if (!state || !canvasRef.current || !containerRef.current) return undefined;
+    
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const cWidth = canvasWidth;
+    const cHeight = canvasHeight;
+    const scale = Math.min(containerRect.width / cWidth, containerRect.height / cHeight);
+    
+    const offsetX = (containerRect.width - (cWidth * scale)) / 2;
+    const offsetY = (containerRect.height - (cHeight * scale)) / 2;
+    
+    const centerX = offsetX + (cWidth / 2 + state.x) * scale;
+    const height = activeLayer.startsWith('text-') ? 80 * state.zoom : 100 * state.zoom;
+    const topY = offsetY + (cHeight / 2 + state.y) * scale - (height / 2 * scale) - 60;
+    
+    return {
+      top: `${Math.max(20, topY)}px`, 
+      left: `${centerX}px`,
+      transform: 'translateX(-50%)' // Center horizontally on the coordinate
+    };
+  };
+
   return (
     <div className="flex flex-col lg:flex-row gap-8 w-full max-w-6xl mx-auto">
       <div className="flex-1 flex flex-col items-center">
@@ -804,7 +833,7 @@ export function CanvasEditor({
         <div 
           ref={containerRef}
           className={cn(
-            "relative w-full max-w-[500px] bg-stone-900 rounded-xl overflow-hidden shadow-2xl border border-stone-800 cursor-move touch-none",
+            "relative w-full max-w-[500px] bg-stone-900 rounded-[2rem] overflow-hidden shadow-2xl border border-stone-800 cursor-move touch-none",
             editorState.aspectRatio === '1:1' ? "aspect-square" : "aspect-[9/16]"
           )}
           onMouseDown={handleMouseDown}
@@ -815,6 +844,24 @@ export function CanvasEditor({
           onTouchMove={handleMouseMove}
           onTouchEnd={handleMouseUp}
         >
+          {/* Quick Actions Hover Toolbar */}
+          {!isDragging && activeTab === 'none' && (activeLayer.startsWith('text-') || activeLayer.startsWith('sticker-')) && (
+            <div style={getQuickActionStyle()} className="absolute z-40 flex items-center gap-1 bg-stone-800/95 backdrop-blur-xl border border-stone-600/50 p-1.5 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in duration-200 pointer-events-auto">
+               <button onClick={(e) => { e.stopPropagation(); setActiveTab('adjust'); }} className="p-2.5 text-emerald-400 hover:text-emerald-300 hover:bg-stone-700/80 rounded-full transition-colors font-medium text-xs flex items-center gap-2" title="Editar">
+                 <Type className="w-4 h-4" /> Editar
+               </button>
+               {activeLayer.startsWith('sticker-') && (
+                 <button onClick={(e) => { e.stopPropagation(); setActiveLayerState(prev => ({ ...prev, flip: prev.flip * -1 })); }} className="p-2.5 text-stone-300 hover:text-white hover:bg-stone-700/80 rounded-full transition-colors" title="Reflejar">
+                   <FlipHorizontal className="w-4 h-4" />
+                 </button>
+               )}
+               <div className="w-px h-5 bg-stone-700"></div>
+               <button onClick={(e) => { e.stopPropagation(); removeLayer(activeLayer, { stopPropagation: () => {} } as any); setActiveLayer('frame'); }} className="p-2.5 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors" title="Eliminar">
+                 <Trash2 className="w-4 h-4" />
+               </button>
+            </div>
+          )}
+
           <canvas
             ref={canvasRef}
             width={canvasWidth}
