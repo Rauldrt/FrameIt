@@ -935,7 +935,7 @@ export function CanvasEditor({
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-4 w-[95vw] md:w-auto pointer-events-none">
         
         {activeTab !== 'none' && (
-          <div ref={tabsRef} className="w-full md:w-[380px] bg-stone-900 border border-stone-800 rounded-3xl p-5 shadow-[0_30px_60px_-12px_rgba(0,0,0,0.5),0_0_40px_rgba(52,211,153,0.1)] panel-animation pointer-events-auto">
+          <div ref={tabsRef} className="w-full md:w-[380px] bg-stone-900 border border-stone-800 rounded-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_30px_rgba(52,211,153,0.15),0_0_50px_rgba(99,102,241,0.1),0_0_70px_rgba(168,85,247,0.05)] panel-animation pointer-events-auto">
             <div className="flex justify-between items-center mb-4 border-b border-stone-800 pb-3">
               <h3 className="text-white font-medium capitalize flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
                 {activeTab === 'layers' && <><Layers className="w-5 h-5 text-emerald-400" /> Capas</>}
