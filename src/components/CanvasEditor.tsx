@@ -846,7 +846,12 @@ export function CanvasEditor({
         >
           {/* Quick Actions Hover Toolbar */}
           {!isDragging && activeTab === 'none' && (activeLayer.startsWith('text-') || activeLayer.startsWith('sticker-')) && (
-            <div style={getQuickActionStyle()} className="absolute z-40 flex items-center gap-1 bg-stone-800/95 backdrop-blur-xl border border-stone-600/50 p-1.5 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in duration-200 pointer-events-auto">
+            <div 
+              style={getQuickActionStyle()} 
+              className="absolute z-40 flex items-center gap-1 bg-stone-800/95 backdrop-blur-xl border border-stone-600/50 p-1.5 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in duration-200 pointer-events-auto"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
                <button onClick={(e) => { e.stopPropagation(); setActiveTab('adjust'); }} className="p-2.5 text-emerald-400 hover:text-emerald-300 hover:bg-stone-700/80 rounded-full transition-colors font-medium text-xs flex items-center gap-2" title="Editar">
                  <Type className="w-4 h-4" /> Editar
                </button>
