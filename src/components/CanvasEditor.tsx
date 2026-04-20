@@ -877,7 +877,7 @@ export function CanvasEditor({
               onClick={(e) => { e.stopPropagation(); }}
             >
                {/* Done Button */}
-               (activeLayer === 'photo' || activeLayer.startsWith('text-') || activeLayer.startsWith('sticker-')) && (
+               {(activeLayer === 'photo' || activeLayer.startsWith('text-') || activeLayer.startsWith('sticker-')) && (
                  <>
                    <button 
                      onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setActiveLayer('frame'); }} 
