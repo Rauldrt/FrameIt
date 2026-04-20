@@ -839,19 +839,30 @@ export function CanvasEditor({
             <div 
               style={getQuickActionStyle()} 
               className="absolute z-40 flex items-center gap-1 bg-stone-800/95 backdrop-blur-xl border border-stone-600/50 p-1.5 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in duration-200 pointer-events-auto"
-              onMouseDown={(e) => e.stopPropagation()}
-              onTouchStart={(e) => e.stopPropagation()}
+              onPointerDown={(e) => { e.stopPropagation(); }}
+              onMouseDown={(e) => { e.stopPropagation(); }}
+              onTouchStart={(e) => { e.stopPropagation(); }}
+              onClick={(e) => { e.stopPropagation(); }}
             >
-               <button onClick={(e) => { e.stopPropagation(); setActiveTab('adjust'); }} className="p-2.5 text-emerald-400 hover:text-emerald-300 hover:bg-stone-700/80 rounded-full transition-colors font-medium text-xs flex items-center gap-2" title="Editar">
+               <button 
+                 onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setActiveTab('adjust'); }} 
+                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveTab('adjust'); }}
+                 className="p-2.5 text-emerald-400 hover:text-emerald-300 hover:bg-stone-700/80 rounded-full transition-all active:scale-90 font-medium text-xs flex items-center gap-2" title="Editar">
                  <Type className="w-4 h-4" /> Editar
                </button>
                {activeLayer.startsWith('sticker-') && (
-                 <button onClick={(e) => { e.stopPropagation(); setActiveLayerState(prev => ({ ...prev, flip: prev.flip * -1 })); }} className="p-2.5 text-stone-300 hover:text-white hover:bg-stone-700/80 rounded-full transition-colors" title="Reflejar">
+                 <button 
+                   onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setActiveLayerState(prev => ({ ...prev, flip: prev.flip * -1 })); }}
+                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveLayerState(prev => ({ ...prev, flip: prev.flip * -1 })); }}
+                   className="p-2.5 text-stone-300 hover:text-white hover:bg-stone-700/80 rounded-full transition-all active:scale-90" title="Reflejar">
                    <FlipHorizontal className="w-4 h-4" />
                  </button>
                )}
                <div className="w-px h-5 bg-stone-700"></div>
-               <button onClick={(e) => { e.stopPropagation(); removeLayer(activeLayer, { stopPropagation: () => {} } as any); setActiveLayer('frame'); }} className="p-2.5 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors" title="Eliminar">
+               <button 
+                 onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); removeLayer(activeLayer, { stopPropagation: () => {} } as any); setActiveLayer('frame'); }}
+                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeLayer(activeLayer, { stopPropagation: () => {} } as any); setActiveLayer('frame'); }}
+                 className="p-2.5 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all active:scale-90" title="Eliminar">
                  <Trash2 className="w-4 h-4" />
                </button>
             </div>
@@ -1108,20 +1119,20 @@ export function CanvasEditor({
           <div className="flex flex-col gap-3">
             {onPhotoUpload && (
                <>
-                 <label className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform cursor-pointer animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-300" style={{ animationDelay: '150ms', animationFillMode: 'both' }} title="Subir Foto">
+                 <label className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform cursor-pointer animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-200 delay-150 fill-mode-both" title="Subir Foto">
                     <Upload className="w-5 h-5" />
                     <input type="file" className="hidden" accept="image/*" onChange={(e) => { onPhotoUpload(e); setIsAddMenuOpen(false); }} />
                  </label>
-                 <label className="w-12 h-12 bg-rose-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform cursor-pointer animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-300" style={{ animationDelay: '100ms', animationFillMode: 'both' }} title="Tomar Foto">
+                 <label className="w-12 h-12 bg-rose-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform cursor-pointer animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-200 delay-100 fill-mode-both" title="Tomar Foto">
                     <Camera className="w-5 h-5" />
                     <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => { onPhotoUpload(e); setIsAddMenuOpen(false); }} />
                  </label>
                </>
             )}
-            <button onClick={() => { addTextLayer(); setIsAddMenuOpen(false); }} className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-300" style={{ animationDelay: '50ms', animationFillMode: 'both' }} title="Añadir Texto">
+            <button onClick={() => { addTextLayer(); setIsAddMenuOpen(false); }} className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-200 delay-75 fill-mode-both" title="Añadir Texto">
               <Type className="w-5 h-5"/>
             </button>
-            <button onClick={() => { setActiveTab('stickers'); setIsAddMenuOpen(false); }} className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-300" style={{ animationDelay: '0ms', animationFillMode: 'both' }} title="Añadir Sticker">
+            <button onClick={() => { setActiveTab('stickers'); setIsAddMenuOpen(false); }} className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-200 delay-0 fill-mode-both" title="Añadir Sticker">
               <StickerIcon className="w-5 h-5"/>
             </button>
           </div>
