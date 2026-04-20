@@ -1143,6 +1143,15 @@ export function CanvasEditor({
         </div>
       </div>
 
+      {/* Backdrop Blur Overlay when FAB is open */}
+      {isAddMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-md animate-in fade-in duration-300"
+          onClick={() => setIsAddMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Floating Action Button (FAB) for Add Elements */}
       <div ref={fabRef} className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-auto">
         {isAddMenuOpen && (
