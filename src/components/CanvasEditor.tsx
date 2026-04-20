@@ -105,18 +105,6 @@ const INITIAL_LAYER_STATE: CommonLayerState = {
 
 const STICKER_OPTIONS = ['🏃', '⛰️', '🌲', '🔥', '🏆', '🏁', '👟', '🧭', '🐆', '🧉', '📍', '🗺️', '🧗', '🚵', '🏊'];
 
-const FONT_OPTIONS = [
-  { name: 'Inter', family: 'Inter, sans-serif' },
-  { name: 'Impact', family: 'Impact, sans-serif' },
-  { name: 'Roboto', family: 'Roboto, sans-serif' },
-  { name: 'Montserrat', family: 'Montserrat, sans-serif' },
-  { name: 'Bebas Neue', family: '"Bebas Neue", sans-serif' },
-];
-
-const COLOR_OPTIONS = [
-  '#ffffff', '#000000', '#f87171', '#fbbf24', '#34d399', '#60a5fa', '#818cf8', '#a78bfa', '#f472b6'
-];
-
 const FILTER_PRESETS = [
   { name: 'Original', brightness: 100, contrast: 100, saturation: 100 },
   { name: 'Brillante', brightness: 120, contrast: 110, saturation: 110 },
