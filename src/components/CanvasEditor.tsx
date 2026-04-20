@@ -4,7 +4,7 @@ import {
   Type, Palette, Plus, X, Eraser, Wand2, ChevronDown, ChevronUp, 
   Undo2, Redo2, Sliders, Smartphone, Square, Sticker as StickerIcon,
   Sun, Contrast, Droplets, Image as ImageIcon, Trash2, RotateCcw,
-  Sparkles, Upload, Camera
+  Sparkles, Upload, Camera, Check
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -876,11 +876,24 @@ export function CanvasEditor({
               onTouchStart={(e) => { e.stopPropagation(); }}
               onClick={(e) => { e.stopPropagation(); }}
             >
+               {/* Done Button */}
+               {(activeLayer.startsWith('text-') || activeLayer.startsWith('sticker-')) && (
+                 <>
+                   <button 
+                     onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setActiveLayer('photo'); }} 
+                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveLayer('photo'); }}
+                     className="p-2.5 text-emerald-400 hover:text-emerald-300 hover:bg-stone-700/80 rounded-full transition-all active:scale-90" title="Grabar Cambios">
+                     <Check className="w-5 h-5" />
+                   </button>
+                   <div className="w-px h-5 bg-stone-700"></div>
+                 </>
+               )}
+
                <button 
                  onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setActiveTab('adjust'); }} 
                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveTab('adjust'); }}
-                 className="p-2.5 text-emerald-400 hover:text-emerald-300 hover:bg-stone-700/80 rounded-full transition-all active:scale-90 font-medium text-xs flex items-center gap-2" title="Editar">
-                 <Type className="w-4 h-4" /> Editar
+                 className="p-2.5 text-blue-400 hover:text-blue-300 hover:bg-stone-700/80 rounded-full transition-all active:scale-90 flex items-center gap-2 px-3" title="Editar">
+                 <Move className="w-4 h-4" /> Ajustar
                </button>
                {activeLayer.startsWith('sticker-') && (
                  <button 
