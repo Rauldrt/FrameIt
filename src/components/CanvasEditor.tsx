@@ -932,7 +932,7 @@ export function CanvasEditor({
       </div>
 
       {/* Floating UI Editor Tools (Material Design 3 Style) */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-4 w-[95vw] md:w-auto pointer-events-none">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-4 w-[95vw] md:w-auto pointer-events-none">
         
         {activeTab !== 'none' && (
           <div ref={tabsRef} className="w-full md:w-[380px] bg-stone-900 border border-stone-800 rounded-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_30px_rgba(52,211,153,0.15),0_0_50px_rgba(99,102,241,0.1),0_0_70px_rgba(168,85,247,0.05)] panel-animation pointer-events-auto">
