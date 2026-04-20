@@ -110,6 +110,8 @@ export function CanvasEditor({
 }: CanvasEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fabRef = useRef<HTMLDivElement>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);
   
   const [activeLayer, setActiveLayer] = useState<string>('photo');
   const [expandedSections, setExpandedSections] = useState({ 
@@ -216,6 +218,34 @@ export function CanvasEditor({
   const [initialPinch, setInitialPinch] = useState<{dist: number, angle: number, zoom: number, rotation: number} | null>(null);
   const [activeTab, setActiveTab] = useState<'none' | 'layers' | 'stickers' | 'filters' | 'adjust'>('none');
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+
+  // Click Outside Behavior (Light Dismiss)
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      
+      // Close FAB if open and click is outside
+      if (isAddMenuOpen && fabRef.current && !fabRef.current.contains(target)) {
+        setIsAddMenuOpen(false);
+      }
+      
+      // Close active tabs/cards if click is outside the tabs content AND not on a canvas interaction
+      if (activeTab !== 'none' && tabsRef.current && !tabsRef.current.contains(target)) {
+        // Only close if we are not clicking the canvas area (containerRef) 
+        // to avoid conflicts with layer selection
+        if (containerRef.current && !containerRef.current.contains(target)) {
+          setActiveTab('none');
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isAddMenuOpen, activeTab]);
 
   const [isProcessingErase, setIsProcessingErase] = useState(false);
   const photoImgRef = useRef<HTMLImageElement | null>(null);
@@ -905,7 +935,7 @@ export function CanvasEditor({
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-4 w-[95vw] md:w-auto pointer-events-none">
         
         {activeTab !== 'none' && (
-          <div className="w-full md:w-[380px] bg-stone-900 border border-stone-800 rounded-3xl p-5 shadow-[0_0_40px_rgba(52,211,153,0.15)] animate-in slide-in-from-bottom-4 fade-in duration-300 pointer-events-auto">
+          <div ref={tabsRef} className="w-full md:w-[380px] bg-stone-900 border border-stone-800 rounded-3xl p-5 shadow-[0_0_40px_rgba(52,211,153,0.15)] animate-in slide-in-from-bottom-4 fade-in duration-300 pointer-events-auto">
             <div className="flex justify-between items-center mb-4 border-b border-stone-800 pb-3">
               <h3 className="text-white font-medium capitalize flex items-center gap-2">
                 {activeTab === 'layers' && <><Layers className="w-5 h-5 text-emerald-400" /> Capas</>}
@@ -1114,7 +1144,7 @@ export function CanvasEditor({
       </div>
 
       {/* Floating Action Button (FAB) for Add Elements */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-auto">
+      <div ref={fabRef} className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-auto">
         {isAddMenuOpen && (
           <div className="flex flex-col gap-3">
             {onPhotoUpload && (
