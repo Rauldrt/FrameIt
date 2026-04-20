@@ -283,7 +283,8 @@ export function UserApp() {
                 <li><strong className="text-emerald-400">1. Sube tu foto</strong> o presiona el botón de cámara para tomarte una ahora mismo.</li>
                 <li><strong className="text-emerald-400">2. El marco ya está listo</strong>. Tu foto aparecerá automáticamente integrada en el diseño compartido.</li>
                 <li><strong className="text-blue-400">3. Ajusta tu imagen</strong> arrastrándola o usando dos dedos para cambiar su tamaño y posición.</li>
-                <li><strong className="text-blue-400">4. ¡Dale tu estilo!</strong> Añade stickers sugeridos por IA o textos personalizados antes de guardar.</li>
+                <li><strong className="text-blue-400">4. ¡Dale tu estilo!</strong> Añade stickers sugeridos por IA o textos personalizados.</li>
+                <li><strong className="text-emerald-400">5. ¡Comparte el éxito!</strong> Pulsa el botón "Compartir" para descargar tu foto o subirla directo a tus historias y redes.</li>
               </ul>
               
               <div className="pt-4 border-t border-stone-700/50">
