@@ -393,7 +393,7 @@ export function CanvasEditor({
       ctx.translate(canvas.width / 2 + t.x, canvas.height / 2 + t.y);
       ctx.rotate((t.rotation * Math.PI) / 180);
       ctx.scale(t.flip * t.zoom, t.zoom);
-      ctx.font = `bold 60px ${t.fontFamily}`;
+      ctx.font = `bold 60px "${t.fontFamily}"`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
