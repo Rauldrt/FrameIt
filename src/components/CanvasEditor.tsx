@@ -232,11 +232,11 @@ export function CanvasEditor({
       }
       
       // Close active tabs/cards if click is outside the tabs content AND not on a canvas interaction
-      if (activeTab !== 'none' && tabsRef.current && !tabsRef.current.contains(target)) {
+      if (tabsRef.current && !tabsRef.current.contains(target)) {
         // Only close if we are not clicking the canvas area (containerRef) 
-        // to avoid conflicts with layer selection
         if (containerRef.current && !containerRef.current.contains(target)) {
           setActiveTab('none');
+          setActiveLayer('photo'); // Deseleccionamos la capa actual (volvemos a la foto base)
         }
       }
     };
