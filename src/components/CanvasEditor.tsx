@@ -1119,20 +1119,20 @@ export function CanvasEditor({
           <div className="flex flex-col gap-3">
             {onPhotoUpload && (
                <>
-                 <label className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform cursor-pointer animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-200 delay-150 fill-mode-both" title="Subir Foto">
+                 <label className="fab-item-1 w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg cursor-pointer" title="Subir Foto">
                     <Upload className="w-5 h-5" />
                     <input type="file" className="hidden" accept="image/*" onChange={(e) => { onPhotoUpload(e); setIsAddMenuOpen(false); }} />
                  </label>
-                 <label className="w-12 h-12 bg-rose-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform cursor-pointer animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-200 delay-100 fill-mode-both" title="Tomar Foto">
+                 <label className="fab-item-2 w-12 h-12 bg-rose-500 rounded-full flex items-center justify-center text-white shadow-lg cursor-pointer" title="Tomar Foto">
                     <Camera className="w-5 h-5" />
                     <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => { onPhotoUpload(e); setIsAddMenuOpen(false); }} />
                  </label>
                </>
             )}
-            <button onClick={() => { addTextLayer(); setIsAddMenuOpen(false); }} className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-200 delay-75 fill-mode-both" title="Añadir Texto">
+            <button onClick={() => { addTextLayer(); setIsAddMenuOpen(false); }} className="fab-item-3 w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white shadow-lg" title="Añadir Texto">
               <Type className="w-5 h-5"/>
             </button>
-            <button onClick={() => { setActiveTab('stickers'); setIsAddMenuOpen(false); }} className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-200 delay-0 fill-mode-both" title="Añadir Sticker">
+            <button onClick={() => { setActiveTab('stickers'); setIsAddMenuOpen(false); }} className="fab-item-4 w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-white shadow-lg" title="Añadir Sticker">
               <StickerIcon className="w-5 h-5"/>
             </button>
           </div>
@@ -1142,6 +1142,29 @@ export function CanvasEditor({
         </button>
       </div>
       <style>{`
+        @keyframes popIn {
+          0% { transform: translateY(30px) scale(0) rotate(-45deg); opacity: 0; }
+          60% { transform: translateY(-10px) scale(1.1) rotate(5deg); opacity: 1; }
+          100% { transform: translateY(0) scale(1) rotate(0); opacity: 1; }
+        }
+        @keyframes floatingOrganic {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          25% { transform: translate(2px, -4px) rotate(1deg); }
+          50% { transform: translate(-1px, -6px) rotate(-1deg); }
+          75% { transform: translate(-2px, -3px) rotate(0.5deg); }
+        }
+        .fab-item-1 { animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.20s both, floatingOrganic 4s ease-in-out infinite 0.6s; }
+        .fab-item-2 { animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.14s both, floatingOrganic 4.5s ease-in-out infinite 0.5s; }
+        .fab-item-3 { animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both, floatingOrganic 3.5s ease-in-out infinite 0.4s; }
+        .fab-item-4 { animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0s both, floatingOrganic 5s ease-in-out infinite 0.3s; }
+        
+        .fab-item-1:hover, .fab-item-2:hover, .fab-item-3:hover, .fab-item-4:hover { 
+          filter: brightness(1.2) drop-shadow(0 0 8px currentColor);
+          transform: scale(1.15) !important; 
+          transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+          z-index: 10;
+        }
+        
         .custom-scrollbar::-webkit-scrollbar { width: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
