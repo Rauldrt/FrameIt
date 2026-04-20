@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Upload, Image as ImageIcon, Sparkles, Video, Camera, Info, ChevronDown, ChevronUp } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { cn } from '../lib/utils';
 import { CanvasEditor } from './CanvasEditor';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -16,8 +17,12 @@ export function UserApp() {
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [adminPass, setAdminPass] = useState('');
+  const [loginError, setLoginError] = useState(false);
   const [isPhotoCardOpen, setIsPhotoCardOpen] = useState(true);
   const [isFrameCardOpen, setIsFrameCardOpen] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const frameId = searchParams.get('frame');
@@ -159,11 +164,15 @@ export function UserApp() {
     <div className="min-h-screen bg-stone-900 text-stone-100 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         <header className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/" className="p-2 hover:bg-stone-800 rounded-full transition-colors">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
-            <h1 className="text-2xl font-bold text-white">FrameIt</h1>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setShowAdminLogin(true)} 
+              className="p-2 hover:bg-stone-800 rounded-full transition-colors"
+              title="Panel de Administrador"
+            >
+              <ArrowLeft className="w-6 h-6 text-stone-400" />
+            </button>
+            <h1 className="text-xl font-bold text-white tracking-tight ml-2">FrameIt</h1>
           </div>
           <div className="flex items-center gap-4">
             {!user && searchParams.get('frame') && (
@@ -179,6 +188,65 @@ export function UserApp() {
             </button>
           </div>
         </header>
+
+        {/* Admin Login Modal */}
+        {showAdminLogin && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-stone-900 border border-stone-800 p-8 rounded-[2.5rem] max-w-sm w-full shadow-[0_0_50px_rgba(52,211,153,0.15)] animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 bg-emerald-500/10 rounded-3xl flex items-center justify-center mb-2">
+                  <ArrowLeft className="w-8 h-8 text-emerald-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-white">Acceso Restringido</h2>
+                <p className="text-stone-400 text-sm">Ingresa la contraseña de administrador para salir del modo de edición.</p>
+                
+                <div className="w-full space-y-3 mt-4">
+                  <input 
+                    type="password" 
+                    placeholder="Contraseña" 
+                    value={adminPass}
+                    onChange={(e) => { setAdminPass(e.target.value); setLoginError(false); }}
+                    className={cn(
+                      "w-full bg-stone-800 border-2 rounded-2xl px-5 py-4 text-white outline-none transition-all",
+                      loginError ? "border-red-500 animate-shake" : "border-stone-700 focus:border-emerald-500"
+                    )}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if (adminPass === '1234') { // Cambiar por contraseña real o variable de entorno
+                          navigate('/');
+                        } else {
+                          setLoginError(true);
+                        }
+                      }
+                    }}
+                  />
+                  {loginError && <p className="text-red-400 text-xs font-medium">Contraseña incorrecta. Inténtalo de nuevo.</p>}
+                </div>
+
+                <div className="flex gap-3 w-full mt-2">
+                  <button 
+                    onClick={() => { setShowAdminLogin(false); setAdminPass(''); setLoginError(false); }}
+                    className="flex-1 py-4 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-2xl font-bold transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (adminPass === '1234') {
+                        navigate('/');
+                      } else {
+                        setLoginError(true);
+                      }
+                    }}
+                    className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/20 transition-all"
+                  >
+                    Entrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showHelp && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setShowHelp(false)}>
