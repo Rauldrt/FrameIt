@@ -280,10 +280,10 @@ export function UserApp() {
             <div className="bg-stone-800 p-6 rounded-2xl max-w-sm w-full border border-stone-700 space-y-4" onClick={(e) => e.stopPropagation()}>
               <h2 className="text-xl font-bold text-white mb-2">¿Cómo usar la App?</h2>
               <ul className="text-stone-300 space-y-3 text-sm">
-                <li><strong className="text-emerald-400">1. Sube tu foto</strong> o tómate una abriendo la cámara local.</li>
-                <li><strong className="text-emerald-400">2. Carga un marco</strong> PNG transparente o diseña uno en el Bot de IA del menú principal.</li>
-                <li><strong className="text-blue-400">3. Arrastra las capas</strong> (foto o marco) en la pantalla para posicionarlas.</li>
-                <li><strong className="text-blue-400">4. Ajusta tamaño y textos</strong> desde las herramientas inferiores.</li>
+                <li><strong className="text-emerald-400">1. Sube tu foto</strong> o presiona el botón de cámara para tomarte una ahora mismo.</li>
+                <li><strong className="text-emerald-400">2. El marco ya está listo</strong>. Tu foto aparecerá automáticamente integrada en el diseño compartido.</li>
+                <li><strong className="text-blue-400">3. Ajusta tu imagen</strong> arrastrándola o usando dos dedos para cambiar su tamaño y posición.</li>
+                <li><strong className="text-blue-400">4. ¡Dale tu estilo!</strong> Añade stickers sugeridos por IA o textos personalizados antes de guardar.</li>
               </ul>
               
               <div className="pt-4 border-t border-stone-700/50">
