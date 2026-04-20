@@ -8,6 +8,35 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
+export interface TextLayer {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  fontSize: number;
+  fontFamily: string;
+  color: string;
+  rotation: number;
+  opacity: number;
+  shadowColor?: string;
+  outlineColor?: string;
+}
+
+const FONT_OPTIONS = [
+  { name: 'Moderna', family: 'Inter' },
+  { name: 'Clásica', family: 'Playfair Display' },
+  { name: 'Elegante', family: 'Dancing Script' },
+  { name: 'Impacto', family: 'Bebas Neue' },
+  { name: 'Escritura', family: 'Pacifico' },
+  { name: 'Premium', family: 'Outfit' },
+  { name: 'Minimal', family: 'Montserrat' },
+  { name: 'Display', family: 'Roboto' }
+];
+
+const COLOR_OPTIONS = [
+  '#ffffff', '#000000', '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#71717a', 'transparent'
+];
+
 export interface TextLayerState {
   id: string;
   type: 'text';
@@ -380,14 +409,18 @@ export function CanvasEditor({
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      if (t.effect === 'shadow') {
-        ctx.shadowColor = 'rgba(0,0,0,0.8)';
-        ctx.shadowBlur = 10;
+      // Advanced Shadow
+      if (t.shadowColor) {
+        ctx.shadowColor = t.shadowColor;
+        ctx.shadowBlur = 12;
         ctx.shadowOffsetX = 4;
         ctx.shadowOffsetY = 4;
-      } else if (t.effect === 'outline') {
-        ctx.strokeStyle = t.color === '#000000' ? '#ffffff' : '#000000';
-        ctx.lineWidth = 6;
+      }
+
+      // Advanced Outline/Borde
+      if (t.outlineColor) {
+        ctx.strokeStyle = t.outlineColor;
+        ctx.lineWidth = 10;
         ctx.lineJoin = 'round';
         ctx.strokeText(t.text, 0, 0);
       }
@@ -1080,7 +1113,7 @@ export function CanvasEditor({
                         <span className="text-emerald-400 text-xs font-semibold uppercase tracking-wider block">Tipografía</span>
                         <div className="grid grid-cols-2 gap-2">
                           {FONT_OPTIONS.map(font => (
-                            <button key={font.name} onClick={() => setActiveLayerState(prev => ({ ...prev, fontFamily: font.family }))} className={cn("py-2.5 px-3 rounded-xl border-2 text-xs transition-all", activeState.fontFamily === font.family ? "bg-emerald-500/20 border-emerald-500 text-emerald-400" : "bg-stone-800 border-transparent text-stone-300 hover:border-stone-600")} style={{ fontFamily: font.family }}>
+                            <button key={font.name} onClick={() => setActiveLayerState(prev => ({ ...prev, fontFamily: font.family }))} className={cn("py-2 px-3 rounded-xl border-2 text-xs transition-all text-center", activeState.fontFamily === font.family ? "bg-emerald-500/20 border-emerald-500 text-emerald-400" : "bg-stone-800 border-transparent text-stone-300 hover:border-stone-600")} style={{ fontFamily: font.family }}>
                               {font.name}
                             </button>
                           ))}
@@ -1088,20 +1121,35 @@ export function CanvasEditor({
                       </div>
 
                       <div className="space-y-3">
-                        <span className="text-emerald-400 text-xs font-semibold uppercase tracking-wider block">Aparencia</span>
-                        <div className="flex flex-wrap gap-3 p-3 bg-stone-800 rounded-xl">
-                          {COLOR_OPTIONS.map(color => (
-                            <button key={color} onClick={() => setActiveLayerState(prev => ({ ...prev, color }))} className={cn("w-8 h-8 rounded-full transition-transform transform shadow-sm", activeState.color === color ? "scale-125 ring-2 ring-emerald-500 ring-offset-2 ring-offset-stone-900" : "hover:scale-110")} style={{ backgroundColor: color }} />
+                        <span className="text-emerald-400 text-xs font-semibold uppercase tracking-wider block">Color Principal</span>
+                        <div className="flex flex-wrap gap-2.5 p-2 bg-stone-800/50 rounded-xl">
+                          {COLOR_OPTIONS.filter(c => c !== 'transparent').map(color => (
+                            <button key={`main-${color}`} onClick={() => setActiveLayerState(prev => ({ ...prev, color }))} className={cn("w-7 h-7 rounded-full transition-all ring-offset-2 ring-offset-stone-900 shadow-lg", activeState.color === color ? "scale-110 ring-2 ring-emerald-500" : "hover:scale-105 opacity-80 hover:opacity-100")} style={{ backgroundColor: color }} />
                           ))}
                         </div>
                       </div>
 
-                      <div className="flex gap-2">
-                        {(['none', 'shadow', 'outline'] as const).map(effect => (
-                          <button key={effect} onClick={() => setActiveLayerState(prev => ({ ...prev, effect }))} className={cn("flex-1 py-2 px-2 rounded-xl text-xs font-medium capitalize transition-all", activeState.effect === effect ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30" : "bg-stone-800 text-stone-400 hover:text-stone-200")}>
-                            {effect === 'none' ? 'Plano' : effect === 'shadow' ? 'Sombra' : 'Borde'}
-                          </button>
-                        ))}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <span className="text-blue-400 text-xs font-semibold uppercase tracking-wider block">Sombra</span>
+                          <div className="flex flex-wrap gap-2 p-2 bg-stone-800/50 rounded-xl">
+                            {COLOR_OPTIONS.map(color => (
+                              <button key={`shadow-${color}`} onClick={() => setActiveLayerState(prev => ({ ...prev, shadowColor: color === 'transparent' ? undefined : color }))} className={cn("w-6 h-6 rounded-full border border-white/5 transition-all text-[8px] flex items-center justify-center overflow-hidden", (activeState.shadowColor === color || (!activeState.shadowColor && color === 'transparent')) ? "scale-110 ring-2 ring-blue-500" : "opacity-60")} style={{ backgroundColor: color === 'transparent' ? '#1c1917' : color }} >
+                                {color === 'transparent' && "X"}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <span className="text-pink-400 text-xs font-semibold uppercase tracking-wider block">Borde</span>
+                          <div className="flex flex-wrap gap-2 p-2 bg-stone-800/50 rounded-xl">
+                            {COLOR_OPTIONS.map(color => (
+                              <button key={`outline-${color}`} onClick={() => setActiveLayerState(prev => ({ ...prev, outlineColor: color === 'transparent' ? undefined : color }))} className={cn("w-6 h-6 rounded-full border border-white/5 transition-all text-[8px] flex items-center justify-center overflow-hidden", (activeState.outlineColor === color || (!activeState.outlineColor && color === 'transparent')) ? "scale-110 ring-2 ring-pink-500" : "opacity-60")} style={{ backgroundColor: color === 'transparent' ? '#1c1917' : color }} >
+                                {color === 'transparent' && "X"}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
