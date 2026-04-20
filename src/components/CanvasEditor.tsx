@@ -544,7 +544,9 @@ export function CanvasEditor({
           setActiveLayer(selectedLayer);
         }
       } else {
-        if (activeLayer.startsWith('text-') || activeLayer.startsWith('sticker-')) {
+        if (photoSrc && activeLayer !== 'photo') {
+          setActiveLayer('photo');
+        } else if (!photoSrc && activeLayer !== 'frame') {
           setActiveLayer('frame');
         }
       }
@@ -746,8 +748,8 @@ export function CanvasEditor({
   const canvasHeight = editorState.aspectRatio === '1:1' ? 1080 : 1920;
 
   const getQuickActionStyle = (): React.CSSProperties | undefined => {
-    if (!activeLayer || activeLayer === 'photo' || activeLayer === 'frame') return undefined;
-    const state = editorState.textLayers.find(t => t.id === activeLayer) || editorState.stickerLayers.find(s => s.id === activeLayer);
+    if (!activeLayer || activeLayer === 'frame') return undefined; // allow 'photo' and others
+    const state = activeLayer === 'photo' ? editorState.photoState : (editorState.textLayers.find(t => t.id === activeLayer) || editorState.stickerLayers.find(s => s.id === activeLayer));
     if (!state || !canvasRef.current || !containerRef.current) return undefined;
     
     const containerRect = containerRef.current.getBoundingClientRect();
@@ -759,7 +761,7 @@ export function CanvasEditor({
     const offsetY = (containerRect.height - (cHeight * scale)) / 2;
     
     const centerX = offsetX + (cWidth / 2 + state.x) * scale;
-    const height = activeLayer.startsWith('text-') ? 80 * state.zoom : 100 * state.zoom;
+    const height = activeLayer === 'photo' ? 400 * state.zoom : activeLayer.startsWith('text-') ? 80 * state.zoom : 100 * state.zoom;
     const topY = offsetY + (cHeight / 2 + state.y) * scale - (height / 2 * scale) - 60;
     
     return {
@@ -833,7 +835,7 @@ export function CanvasEditor({
           onTouchEnd={handleMouseUp}
         >
           {/* Quick Actions Hover Toolbar */}
-          {!isDragging && activeTab === 'none' && (activeLayer.startsWith('text-') || activeLayer.startsWith('sticker-')) && (
+          {!isDragging && activeTab === 'none' && (activeLayer === 'photo' || activeLayer.startsWith('text-') || activeLayer.startsWith('sticker-')) && (
             <div 
               style={getQuickActionStyle()} 
               className="absolute z-40 flex items-center gap-1 bg-stone-800/95 backdrop-blur-xl border border-stone-600/50 p-1.5 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in duration-200 pointer-events-auto"
@@ -1103,23 +1105,23 @@ export function CanvasEditor({
       {/* Floating Action Button (FAB) for Add Elements */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-auto">
         {isAddMenuOpen && (
-          <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2">
+          <div className="flex flex-col gap-3">
             {onPhotoUpload && (
                <>
-                 <label className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform cursor-pointer" title="Subir Foto">
+                 <label className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform cursor-pointer animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-300" style={{ animationDelay: '150ms', animationFillMode: 'both' }} title="Subir Foto">
                     <Upload className="w-5 h-5" />
                     <input type="file" className="hidden" accept="image/*" onChange={(e) => { onPhotoUpload(e); setIsAddMenuOpen(false); }} />
                  </label>
-                 <label className="w-12 h-12 bg-rose-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform cursor-pointer" title="Tomar Foto">
+                 <label className="w-12 h-12 bg-rose-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform cursor-pointer animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-300" style={{ animationDelay: '100ms', animationFillMode: 'both' }} title="Tomar Foto">
                     <Camera className="w-5 h-5" />
                     <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => { onPhotoUpload(e); setIsAddMenuOpen(false); }} />
                  </label>
                </>
             )}
-            <button onClick={() => { addTextLayer(); setIsAddMenuOpen(false); }} className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform" title="Añadir Texto">
+            <button onClick={() => { addTextLayer(); setIsAddMenuOpen(false); }} className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-300" style={{ animationDelay: '50ms', animationFillMode: 'both' }} title="Añadir Texto">
               <Type className="w-5 h-5"/>
             </button>
-            <button onClick={() => { setActiveTab('stickers'); setIsAddMenuOpen(false); }} className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform" title="Añadir Sticker">
+            <button onClick={() => { setActiveTab('stickers'); setIsAddMenuOpen(false); }} className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform animate-in fade-in slide-in-from-bottom-5 zoom-in-75 duration-300" style={{ animationDelay: '0ms', animationFillMode: 'both' }} title="Añadir Sticker">
               <StickerIcon className="w-5 h-5"/>
             </button>
           </div>
