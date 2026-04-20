@@ -212,6 +212,7 @@ export function UserApp() {
               onPhotoUpload={handlePhotoUpload}
               onAnalyzePhoto={analyzePhoto}
               isAnalyzing={isAnalyzing}
+              mode="user"
             />
           </div>
         </div>

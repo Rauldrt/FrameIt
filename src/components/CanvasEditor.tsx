@@ -66,6 +66,7 @@ interface CanvasEditorProps {
   onPhotoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAnalyzePhoto?: () => void;
   isAnalyzing?: boolean;
+  mode?: 'designer' | 'user';
 }
 
 const INITIAL_LAYER_STATE: CommonLayerState = { 
@@ -106,7 +107,8 @@ export function CanvasEditor({
   onFrameModified,
   onPhotoUpload,
   onAnalyzePhoto,
-  isAnalyzing = false
+  isAnalyzing = false,
+  mode = 'designer'
 }: CanvasEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -913,7 +915,8 @@ export function CanvasEditor({
           {!photoSrc && !frameSrc && <div className="absolute inset-0 flex items-center justify-center text-stone-500 pointer-events-none">Sube una foto para comenzar</div>}
         </div>
 
-        {activeLayer === 'frame' && frameSrc && (
+        {/* Erase tools: Only for Designer */}
+        {mode === 'designer' && activeLayer === 'frame' && frameSrc && (
           <div className="mt-4 flex gap-2 justify-center w-full max-w-[500px]">
             <button
               onClick={() => setEraseMode(eraseMode === 'manual' ? 'none' : 'manual')}
@@ -965,11 +968,13 @@ export function CanvasEditor({
                       </button>
                     </div>
                   ))}
-                  <div className="flex bg-stone-900 border border-stone-800 rounded-xl overflow-hidden">
-                    <button onClick={() => setActiveLayer('frame')} className={cn("flex-1 py-3 px-4 text-sm font-medium transition-colors flex items-center", activeLayer === 'frame' ? "bg-stone-800 text-emerald-400" : "text-stone-400 hover:text-stone-200")}>
-                      <Square className="w-4 h-4 mr-2 opacity-50" /> Capa Marco
-                    </button>
-                  </div>
+                  {mode === 'designer' && (
+                    <div className="flex bg-stone-900 border border-stone-800 rounded-xl overflow-hidden">
+                      <button onClick={() => setActiveLayer('frame')} className={cn("flex-1 py-3 px-4 text-sm font-medium transition-colors flex items-center", activeLayer === 'frame' ? "bg-stone-800 text-emerald-400" : "text-stone-400 hover:text-stone-200")}>
+                        <Square className="w-4 h-4 mr-2 opacity-50" /> Capa Marco
+                      </button>
+                    </div>
+                  )}
                   <div className="flex bg-stone-900 border border-stone-800 rounded-xl overflow-hidden">
                     <button onClick={() => setActiveLayer('photo')} className={cn("flex-1 py-3 px-4 text-sm font-medium transition-colors flex items-center", activeLayer === 'photo' ? "bg-stone-800 text-emerald-400" : "text-stone-400 hover:text-stone-200")}>
                       <ImageIcon className="w-4 h-4 mr-2 opacity-50" /> Capa Foto Base
@@ -1087,8 +1092,9 @@ export function CanvasEditor({
                       </div>
                     </div>
                   )}
-                  <p className="text-xs text-stone-500 text-center font-medium bg-stone-800/50 p-3 rounded-xl">
-                    💡 Usa dos dedos sobre la imagen para hacer zoom y rotar.
+                  <p className="text-xs text-stone-300 text-center font-medium bg-emerald-500/10 p-4 rounded-2xl border border-emerald-500/20 leading-relaxed">
+                    <span className="text-emerald-400 block mb-1 font-bold">✨ Tip de Edición</span>
+                    Usa <b>dos dedos</b> sobre cualquier elemento para mover, rotar o cambiar su tamaño instantáneamente. Toca el botón <b>"+"</b> para añadir stickers o texto.
                   </p>
                   <div className="flex gap-2 pt-2 border-t border-stone-800">
                     <button onClick={() => setActiveLayerState(prev => ({ ...prev, flip: prev.flip * -1 }))} className="flex-1 py-3 bg-stone-800 hover:bg-stone-700 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2">

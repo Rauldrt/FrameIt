@@ -278,6 +278,7 @@ export function Designer() {
               frameSrc={frameSrc} 
               photoSrc={photoSrc} 
               onFrameModified={setModifiedFrameSrc}
+              mode="designer"
             />
             
             {publishedUrl && (
