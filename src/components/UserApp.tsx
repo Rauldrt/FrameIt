@@ -18,7 +18,7 @@ export function UserApp() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [showHelp, setShowHelp] = useState(false);
+  const [showHelp, setShowHelp] = useState(true); // Se muestra automáticamente al cargar
   
   // Estados de Admin Login
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -285,11 +285,20 @@ export function UserApp() {
                 <li><strong className="text-blue-400">3. Arrastra las capas</strong> (foto o marco) en la pantalla para posicionarlas.</li>
                 <li><strong className="text-blue-400">4. Ajusta tamaño y textos</strong> desde las herramientas inferiores.</li>
               </ul>
+              
+              <div className="pt-4 border-t border-stone-700/50">
+                <p className="text-xs text-stone-400 italic">
+                  * Puedes volver a ver esta guía en cualquier momento tocando el botón 
+                  <span className="inline-flex items-center justify-center w-5 h-5 ml-1 bg-stone-700 rounded-full text-[10px] not-italic text-blue-400 font-bold">i</span> 
+                  arriba a la derecha.
+                </p>
+              </div>
+
               <button 
                 onClick={() => setShowHelp(false)}
-                className="w-full mt-4 py-2 bg-stone-700 hover:bg-stone-600 text-white rounded-lg transition-colors font-medium"
+                className="w-full mt-2 py-3 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl transition-colors font-bold shadow-lg shadow-emerald-500/20"
               >
-                ¡Entendido!
+                ¡Empezar a Crear!
               </button>
             </div>
           </div>
