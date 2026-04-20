@@ -877,11 +877,11 @@ export function CanvasEditor({
               onClick={(e) => { e.stopPropagation(); }}
             >
                {/* Done Button */}
-               {(activeLayer.startsWith('text-') || activeLayer.startsWith('sticker-')) && (
+               (activeLayer === 'photo' || activeLayer.startsWith('text-') || activeLayer.startsWith('sticker-')) && (
                  <>
                    <button 
-                     onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setActiveLayer('photo'); }} 
-                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveLayer('photo'); }}
+                     onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setActiveLayer('frame'); }} 
+                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveLayer('frame'); }}
                      className="p-2.5 text-emerald-400 hover:text-emerald-300 hover:bg-stone-700/80 rounded-full transition-all active:scale-90" title="Grabar Cambios">
                      <Check className="w-5 h-5" />
                    </button>
