@@ -935,9 +935,9 @@ export function CanvasEditor({
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-4 w-[95vw] md:w-auto pointer-events-none">
         
         {activeTab !== 'none' && (
-          <div ref={tabsRef} className="w-full md:w-[380px] bg-stone-900 border border-stone-800 rounded-3xl p-5 shadow-[0_0_40px_rgba(52,211,153,0.15)] animate-in slide-in-from-bottom-4 fade-in duration-300 pointer-events-auto">
+          <div ref={tabsRef} className="w-full md:w-[380px] bg-stone-900 border border-stone-800 rounded-3xl p-5 shadow-[0_30px_60px_-12px_rgba(0,0,0,0.5),0_0_40px_rgba(52,211,153,0.1)] panel-animation pointer-events-auto">
             <div className="flex justify-between items-center mb-4 border-b border-stone-800 pb-3">
-              <h3 className="text-white font-medium capitalize flex items-center gap-2">
+              <h3 className="text-white font-medium capitalize flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
                 {activeTab === 'layers' && <><Layers className="w-5 h-5 text-emerald-400" /> Capas</>}
                 {activeTab === 'stickers' && <><StickerIcon className="w-5 h-5 text-amber-400" /> Stickers</>}
                 {activeTab === 'filters' && <><Sliders className="w-5 h-5 text-blue-400" /> Filtros</>}
@@ -946,7 +946,7 @@ export function CanvasEditor({
               <button onClick={() => setActiveTab('none')} className="text-stone-400 hover:text-white transition-colors bg-stone-800 p-1.5 rounded-full"><X className="w-4 h-4"/></button>
             </div>
 
-            <div className="max-h-[50vh] overflow-y-auto custom-scrollbar pr-2 space-y-4">
+            <div className="max-h-[50vh] overflow-y-auto custom-scrollbar pr-2 space-y-4 animate-in fade-in zoom-in-95 duration-300">
               {activeTab === 'layers' && (
                 <div className="flex flex-col gap-2">
                   {editorState.textLayers.map((t, index) => (
@@ -1195,6 +1195,12 @@ export function CanvasEditor({
           z-index: 10;
         }
         
+        @keyframes panelAppear {
+          from { opacity: 0; transform: translateY(20px) scale(0.95); filter: blur(4px); }
+          to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+        .panel-animation { animation: panelAppear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1) both; }
+
         .custom-scrollbar::-webkit-scrollbar { width: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
