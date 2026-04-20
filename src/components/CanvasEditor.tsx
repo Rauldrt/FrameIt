@@ -775,18 +775,6 @@ export function CanvasEditor({
         {/* Undo/Redo & Presets Toolbar */}
         <div className="w-full max-w-[500px] mb-4 flex justify-between items-center px-1">
           <div className="flex gap-2">
-            {onPhotoUpload && (
-              <>
-                <label className="p-2 bg-stone-800 rounded-lg text-emerald-400 hover:bg-stone-700 transition-all cursor-pointer shadow-[0_0_10px_rgba(52,211,153,0.3)] hover:shadow-[0_0_15px_rgba(52,211,153,0.5)]" title="Subir Foto">
-                  <Upload className="w-5 h-5" />
-                  <input type="file" className="hidden" accept="image/*" onChange={onPhotoUpload} />
-                </label>
-                <label className="p-2 bg-stone-800 rounded-lg text-emerald-400 hover:bg-stone-700 transition-all cursor-pointer shadow-[0_0_10px_rgba(52,211,153,0.3)] hover:shadow-[0_0_15px_rgba(52,211,153,0.5)]" title="Tomar Foto">
-                  <Camera className="w-5 h-5" />
-                  <input type="file" className="hidden" accept="image/*" capture="environment" onChange={onPhotoUpload} />
-                </label>
-              </>
-            )}
             <button 
               onClick={undo} 
               disabled={historyIndex <= 0}
@@ -1116,6 +1104,18 @@ export function CanvasEditor({
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-auto">
         {isAddMenuOpen && (
           <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2">
+            {onPhotoUpload && (
+               <>
+                 <label className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform cursor-pointer" title="Subir Foto">
+                    <Upload className="w-5 h-5" />
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => { onPhotoUpload(e); setIsAddMenuOpen(false); }} />
+                 </label>
+                 <label className="w-12 h-12 bg-rose-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform cursor-pointer" title="Tomar Foto">
+                    <Camera className="w-5 h-5" />
+                    <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => { onPhotoUpload(e); setIsAddMenuOpen(false); }} />
+                 </label>
+               </>
+            )}
             <button onClick={() => { addTextLayer(); setIsAddMenuOpen(false); }} className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform" title="Añadir Texto">
               <Type className="w-5 h-5"/>
             </button>
