@@ -9,7 +9,9 @@ import { useAuth } from '../contexts/AuthContext';
 
 export function UserApp() {
   const [searchParams] = useSearchParams();
-  const { user, signIn } = useAuth();
+  const { user, signIn, loginWithEmail } = useAuth();
+  
+  // Estados de la Aplicación
   const [photoSrc, setPhotoSrc] = useState<string | null>(null);
   const [frameSrc, setFrameSrc] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<string | null>(null);
@@ -17,9 +19,15 @@ export function UserApp() {
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  
+  // Estados de Admin Login
   const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [adminEmail, setAdminEmail] = useState('');
   const [adminPass, setAdminPass] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState(false);
+  
+  // UI Controles
   const [isPhotoCardOpen, setIsPhotoCardOpen] = useState(true);
   const [isFrameCardOpen, setIsFrameCardOpen] = useState(true);
   const navigate = useNavigate();
@@ -202,6 +210,16 @@ export function UserApp() {
                 
                 <div className="w-full space-y-3 mt-4">
                   <input 
+                    type="email" 
+                    placeholder="Correo Administrador" 
+                    value={adminEmail}
+                    onChange={(e) => { setAdminEmail(e.target.value); setLoginError(false); }}
+                    className={cn(
+                      "w-full bg-stone-800 border-2 rounded-2xl px-5 py-4 text-white outline-none transition-all",
+                      loginError ? "border-red-500 animate-shake" : "border-stone-700 focus:border-emerald-500"
+                    )}
+                  />
+                  <input 
                     type="password" 
                     placeholder="Contraseña" 
                     value={adminPass}
@@ -210,37 +228,46 @@ export function UserApp() {
                       "w-full bg-stone-800 border-2 rounded-2xl px-5 py-4 text-white outline-none transition-all",
                       loginError ? "border-red-500 animate-shake" : "border-stone-700 focus:border-emerald-500"
                     )}
-                    onKeyDown={(e) => {
+                    onKeyDown={async (e) => {
                       if (e.key === 'Enter') {
-                        if (adminPass === '1234') { // Cambiar por contraseña real o variable de entorno
+                        try {
+                          setIsLoggingIn(true);
+                          await loginWithEmail(adminEmail, adminPass);
                           navigate('/');
-                        } else {
+                        } catch (err) {
                           setLoginError(true);
+                        } finally {
+                          setIsLoggingIn(false);
                         }
                       }
                     }}
                   />
-                  {loginError && <p className="text-red-400 text-xs font-medium">Contraseña incorrecta. Inténtalo de nuevo.</p>}
+                  {loginError && <p className="text-red-400 text-xs font-medium">Credenciales incorrectas. Inténtalo de nuevo.</p>}
                 </div>
 
                 <div className="flex gap-3 w-full mt-2">
                   <button 
-                    onClick={() => { setShowAdminLogin(false); setAdminPass(''); setLoginError(false); }}
+                    onClick={() => { setShowAdminLogin(false); setAdminEmail(''); setAdminPass(''); setLoginError(false); }}
                     className="flex-1 py-4 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-2xl font-bold transition-all"
                   >
                     Cancelar
                   </button>
                   <button 
-                    onClick={() => {
-                      if (adminPass === '1234') {
+                    disabled={isLoggingIn}
+                    onClick={async () => {
+                      try {
+                        setIsLoggingIn(true);
+                        await loginWithEmail(adminEmail, adminPass);
                         navigate('/');
-                      } else {
+                      } catch (err) {
                         setLoginError(true);
+                      } finally {
+                        setIsLoggingIn(false);
                       }
                     }}
-                    className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/20 transition-all"
+                    className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/20 transition-all"
                   >
-                    Entrar
+                    {isLoggingIn ? 'Entrando...' : 'Entrar'}
                   </button>
                 </div>
               </div>
