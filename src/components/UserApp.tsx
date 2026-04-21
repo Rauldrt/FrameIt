@@ -35,10 +35,6 @@ export function UserApp() {
 
   useEffect(() => {
     if (frameId) {
-      if (!user) {
-        // Need user to be logged in before fetching
-        return;
-      }
       const fetchFrame = async () => {
         try {
           const docRef = doc(db, 'shared_frames', frameId);
@@ -63,7 +59,7 @@ export function UserApp() {
         sessionStorage.removeItem('wtt_shared_frame');
       }
     }
-  }, [searchParams, user, frameId]);
+  }, [searchParams, frameId]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -167,54 +163,6 @@ export function UserApp() {
     }
   };
 
-  if (!user && frameId) {
-    return (
-      <div className="min-h-screen bg-stone-950 flex items-center justify-center p-6 relative overflow-hidden">
-        {/* Fondo decorativo */}
-        <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-500/20 rounded-full blur-[120px] animate-pulse" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px]" />
-        </div>
-
-        <div className="relative z-10 max-w-md w-full">
-          <div className="bg-stone-900/80 backdrop-blur-3xl border border-stone-800 p-10 rounded-[3rem] shadow-[0_0_80px_rgba(0,0,0,0.5)] flex flex-col items-center text-center gap-8">
-            <div className="relative">
-              <div className="w-24 h-24 bg-gradient-to-tr from-emerald-500 to-emerald-400 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-emerald-500/40 animate-bounce-slow">
-                <Sparkles className="w-12 h-12 text-white" />
-              </div>
-              <div className="absolute -top-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
-                <ImageIcon className="w-4 h-4 text-white" />
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h1 className="text-4xl font-black text-white tracking-tight">FrameIt</h1>
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-stone-800 rounded-full border border-stone-700">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-                <span className="text-[10px] font-bold text-stone-300 uppercase tracking-widest">Marco Compartido Listo</span>
-              </div>
-            </div>
-
-            <p className="text-stone-400 leading-relaxed text-lg">
-              ¡Te han compartido un diseño exclusivo! Inicia sesión para subir tu foto y crear un recuerdo increíble.
-            </p>
-
-            <button 
-              onClick={signIn}
-              className="w-full flex items-center justify-center gap-4 bg-white hover:bg-stone-100 text-stone-900 font-black py-5 px-8 rounded-3xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl group"
-            >
-              <img src="https://www.google.com/favicon.ico" alt="Google" className="w-6 h-6 grayscale group-hover:grayscale-0 transition-all" />
-              Entrar con Google
-            </button>
-
-            <p className="text-xs text-stone-500 font-medium">
-              Rápido, seguro y gratuito.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-stone-900 text-stone-100 p-6">
@@ -231,11 +179,7 @@ export function UserApp() {
             <h1 className="text-xl font-bold text-white tracking-tight ml-2">FrameIt</h1>
           </div>
           <div className="flex items-center gap-4">
-            {!user && searchParams.get('frame') && (
-              <button onClick={signIn} className="text-sm font-medium text-emerald-400 hover:text-emerald-300">
-                Inicia sesión para cargar el marco
-              </button>
-            )}
+
             <button 
               onClick={() => setShowHelp(true)}
               className="p-2 hover:bg-stone-800 rounded-full transition-colors text-blue-400"
