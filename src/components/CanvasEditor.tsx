@@ -7,6 +7,8 @@ import {
   Sparkles, Upload, Camera, Check
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { db } from '../firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
 export interface TextLayer {
   id: string;
@@ -133,6 +135,7 @@ export function CanvasEditor({
   const tabsRef = useRef<HTMLDivElement>(null);
   
   const [activeLayer, setActiveLayer] = useState<string>('photo');
+  const [isFrameLoading, setIsFrameLoading] = useState(false);
   const [expandedSections, setExpandedSections] = useState({ 
     layers: true, text: true, adjust: true, filters: false, presets: false, stickers: false 
   });
@@ -704,23 +707,58 @@ export function CanvasEditor({
   const handleShare = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    // Lógica para el Diseñador: Guardar en Firestore y dar Link
+    if (mode === 'designer') {
+      try {
+        setIsFrameLoading(true);
+        // Usamos el frameCanvasData filtrado o el canvas actual
+        const frameData = canvas.toDataURL('image/png');
+        const docRef = await addDoc(collection(db, 'shared_frames'), {
+          imageData: frameData,
+          createdAt: new Date().toISOString(),
+          aspectRatio: editorState.aspectRatio
+        });
+        
+        const shareUrl = `${window.location.origin}${window.location.pathname}?frame=${docRef.id}`;
+        
+        // Intentar copiar al portapapeles
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          alert('✅ ¡Marco Guardado!\n\nEl link de invitación ha sido copiado al portapapeles. Ya puedes pegarlo en Instagram o WhatsApp para tus invitados.');
+        } catch (clipErr) {
+          console.warn('Clipboard error:', clipErr);
+          alert(`✅ Marco Guardado!\n\nLink para invitados:\n${shareUrl}`);
+        }
+      } catch (err) {
+        console.error('Error saving shared frame:', err);
+        alert('❌ Error al guardar el marco. Revisa la consola o las reglas de Firebase.');
+      } finally {
+        setIsFrameLoading(false);
+      }
+      return;
+    }
+
+    // Lógica para el Usuario Final: Compartir su foto terminada
     try {
       const blob = await new Promise<Blob | null>(res => canvas.toBlob(res, 'image/png'));
       if (!blob) return;
-      const file = new File([blob], 'frameit.png', { type: 'image/png' });
-      const shareData = { title: 'FrameIt', text: '¡Mira mi creación con FrameIt!', files: [file] };
+      const file = new File([blob], 'mi-foto-frameit.png', { type: 'image/png' });
+      const shareData = { 
+        title: 'FrameIt', 
+        text: '¡Mira la foto que acabo de crear!', 
+        files: [file] 
+      };
 
-      // Navigator.canShare es undefined en viejas versiones, no dependemos estrictamente de él.
       if (navigator.share && (!navigator.canShare || navigator.canShare(shareData))) {
         await navigator.share(shareData);
       } else {
-        alert('Tu navegador/dispositivo no soporta compartir imágenes de forma nativa. La imagen se descargará automáticamente para que puedas compartirla donde quieras.');
-        handleDownload(); // Fallback a descarga
+        handleDownload();
+        alert('La imagen se ha descargado. ¡Ya puedes subirla a tus redes!');
       }
     } catch (err: any) { 
       console.error('Error al compartir:', err); 
       if (err.name !== 'AbortError') {
-        alert('Hubo un error al intentar compartir la imagen. Procedemos a descargarla.');
         handleDownload();
       }
     }
@@ -1165,9 +1203,17 @@ export function CanvasEditor({
              <button onClick={handleDownload} className="bg-stone-800/80 backdrop-blur-xl border border-stone-700 text-white font-medium px-6 py-3 rounded-full flex items-center gap-2 shadow-lg hover:bg-stone-700 transition-colors">
                <Download className="w-5 h-5"/> Guardar
              </button>
-             <button onClick={handleShare} className="bg-emerald-500/90 backdrop-blur-xl border border-emerald-400/50 text-white font-bold px-6 py-3 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(52,211,153,0.4)] hover:bg-emerald-400 transition-colors">
-               <Share2 className="w-5 h-5"/> Compartir
-             </button>
+              <button 
+                onClick={handleShare} 
+                disabled={isFrameLoading}
+                className="bg-emerald-500/90 backdrop-blur-xl border border-emerald-400/50 text-white font-bold px-6 py-3 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(52,211,153,0.4)] hover:bg-emerald-400 transition-colors disabled:opacity-50"
+              >
+                {isFrameLoading ? (
+                  <><Sparkles className="w-5 h-5 animate-spin"/> Guardando...</>
+                ) : (
+                  <><Share2 className="w-5 h-5"/> Compartir</>
+                )}
+              </button>
           </div>
         )}
 
