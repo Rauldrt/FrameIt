@@ -240,6 +240,9 @@ export function CanvasEditor({
   const [initialPinch, setInitialPinch] = useState<{dist: number, angle: number, zoom: number, rotation: number} | null>(null);
   const [activeTab, setActiveTab] = useState<'none' | 'layers' | 'stickers' | 'filters' | 'adjust'>('none');
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const [hasClickedFab, setHasClickedFab] = useState(() => {
+    return localStorage.getItem('frameit_fab_clicked') === 'true';
+  });
 
   // Click Outside Behavior (Light Dismiss)
   useEffect(() => {
@@ -1277,7 +1280,19 @@ export function CanvasEditor({
             </button>
           </div>
         )}
-        <button onClick={() => setIsAddMenuOpen(!isAddMenuOpen)} className="w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(52,211,153,0.4)] hover:scale-105 transition-all">
+        <button 
+          onClick={() => {
+            setIsAddMenuOpen(!isAddMenuOpen);
+            if (!hasClickedFab) {
+              setHasClickedFab(true);
+              localStorage.setItem('frameit_fab_clicked', 'true');
+            }
+          }} 
+          className={cn(
+            "w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(52,211,153,0.4)] hover:scale-105 transition-all",
+            !hasClickedFab && "animate-pulse-shadow"
+          )}
+        >
           <Plus className={cn("w-6 h-6 transition-transform duration-300", isAddMenuOpen && "rotate-45")} />
         </button>
       </div>
@@ -1308,6 +1323,13 @@ export function CanvasEditor({
         @keyframes panelAppear {
           from { opacity: 0; transform: translateY(20px) scale(0.95); filter: blur(4px); }
           to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+        @keyframes softPulseShadow {
+          0%, 100% { box-shadow: 0 0 20px rgba(52, 211, 153, 0.4); }
+          50% { box-shadow: 0 0 35px rgba(52, 211, 153, 0.8), 0 0 10px rgba(52, 211, 153, 0.4); }
+        }
+        .animate-pulse-shadow {
+          animation: softPulseShadow 2s infinite ease-in-out;
         }
         .panel-animation { animation: panelAppear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1) both; }
 
