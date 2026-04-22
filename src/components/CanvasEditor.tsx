@@ -707,12 +707,7 @@ export function CanvasEditor({
     const dataUrl = canvas.toDataURL('image/png');
     setResultImage(dataUrl);
     setShowResultModal(true);
-
-    // Fallback attempt for browsers that DO support it
-    const link = document.createElement('a');
-    link.download = `frameit-${Date.now()}.png`;
-    link.href = dataUrl;
-    link.click();
+    // REMOVED link.click() to prevent "Page cannot be loaded" error in in-app browsers
   };
 
   const handleShare = async () => {
@@ -1348,14 +1343,11 @@ export function CanvasEditor({
                       if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
                         await navigator.share(shareData);
                       } else {
-                        // Fallback download
-                        const link = document.createElement('a');
-                        link.download = `frameit-${Date.now()}.png`;
-                        link.href = resultImage;
-                        link.click();
+                        alert('Tu navegador no permite compartir archivos directamente. Por favor, mantén presionada la imagen para guardarla.');
                       }
                     } catch (e) {
                       console.error(e);
+                      alert('Para guardar: mantén presionada la imagen y elige "Guardar".');
                     }
                   }}
                   className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
