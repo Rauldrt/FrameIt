@@ -245,6 +245,12 @@ export function CanvasEditor({
   });
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [showResultModal, setShowResultModal] = useState(false);
+  const [isInstagram, setIsInstagram] = useState(false);
+
+  useEffect(() => {
+    const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+    setIsInstagram(ua.indexOf('Instagram') > -1 || ua.indexOf('FBAN') > -1 || ua.indexOf('FBAV') > -1);
+  }, []);
 
   // Click Outside Behavior (Light Dismiss)
   useEffect(() => {
@@ -1330,6 +1336,25 @@ export function CanvasEditor({
               </div>
 
               <div className="w-full grid grid-cols-1 gap-3 mt-2">
+                {isInstagram && (
+                  <button 
+                    onClick={() => {
+                      const url = window.location.href;
+                      // Intent trick for Android to open in external browser
+                      if (/Android/i.test(navigator.userAgent)) {
+                        const intentUrl = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;end`;
+                        window.location.href = intentUrl;
+                      } else {
+                        // For iOS, we can only suggest it, but we'll try a generic link
+                        alert('En iPhone, pulsa los tres puntos (...) arriba a la derecha y elige "Abrir en el navegador" o "Abrir en Safari" para descargar.');
+                      }
+                    }}
+                    className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 mb-1"
+                  >
+                    <ImageIcon className="w-5 h-5" /> Abrir en Chrome / Safari
+                  </button>
+                )}
+                
                 <button 
                   onClick={async () => {
                     try {
