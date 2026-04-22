@@ -243,6 +243,8 @@ export function CanvasEditor({
   const [hasClickedFab, setHasClickedFab] = useState(() => {
     return localStorage.getItem('frameit_fab_clicked') === 'true';
   });
+  const [resultImage, setResultImage] = useState<string | null>(null);
+  const [showResultModal, setShowResultModal] = useState(false);
 
   // Click Outside Behavior (Light Dismiss)
   useEffect(() => {
@@ -701,9 +703,15 @@ export function CanvasEditor({
   const handleDownload = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    
+    const dataUrl = canvas.toDataURL('image/png');
+    setResultImage(dataUrl);
+    setShowResultModal(true);
+
+    // Fallback attempt for browsers that DO support it
     const link = document.createElement('a');
     link.download = `frameit-${Date.now()}.png`;
-    link.href = canvas.toDataURL('image/png');
+    link.href = dataUrl;
     link.click();
   };
 
@@ -744,6 +752,10 @@ export function CanvasEditor({
 
     // Lógica para el Usuario Final: Compartir su foto terminada
     try {
+      const dataUrl = canvas.toDataURL('image/png');
+      setResultImage(dataUrl);
+      setShowResultModal(true);
+
       const blob = await new Promise<Blob | null>(res => canvas.toBlob(res, 'image/png'));
       if (!blob) return;
       const file = new File([blob], 'mi-foto-frameit.png', { type: 'image/png' });
@@ -753,17 +765,13 @@ export function CanvasEditor({
         files: [file] 
       };
 
-      if (navigator.share && (!navigator.canShare || navigator.canShare(shareData))) {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        // En algunos navegadores como Instagram, esto puede fallar o no hacer nada
+        // Pero ya mostramos el modal como respaldo visual
         await navigator.share(shareData);
-      } else {
-        handleDownload();
-        alert('La imagen se ha descargado. ¡Ya puedes subirla a tus redes!');
       }
     } catch (err: any) { 
       console.error('Error al compartir:', err); 
-      if (err.name !== 'AbortError') {
-        handleDownload();
-      }
     }
   };
 
@@ -1296,6 +1304,73 @@ export function CanvasEditor({
           <Plus className={cn("w-6 h-6 transition-transform duration-300", isAddMenuOpen && "rotate-45")} />
         </button>
       </div>
+      {/* Result Modal for Sharing/Saving */}
+      {showResultModal && resultImage && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-stone-950/90 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative bg-stone-900 border border-stone-800 rounded-[2.5rem] max-w-lg w-full overflow-hidden shadow-[0_0_50px_rgba(52,211,153,0.2)] animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
+            <button 
+              onClick={() => setShowResultModal(false)}
+              className="absolute top-6 right-6 z-10 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors backdrop-blur-md"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            <div className="p-8 flex flex-col items-center text-center gap-6">
+              <div className="w-16 h-16 bg-emerald-500/10 rounded-3xl flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-emerald-400" />
+              </div>
+              
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold text-white tracking-tight">¡Tu creación está lista!</h2>
+                <p className="text-stone-400 text-sm">Mantén presionada la imagen para guardarla o usa el botón de abajo.</p>
+              </div>
+
+              <div className="w-full relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                <img 
+                  src={resultImage} 
+                  alt="Resultado" 
+                  className="relative w-full aspect-square object-contain rounded-2xl bg-stone-800 shadow-2xl border border-stone-700/50"
+                />
+              </div>
+
+              <div className="w-full grid grid-cols-1 gap-3 mt-2">
+                <button 
+                  onClick={async () => {
+                    try {
+                      const blob = await fetch(resultImage).then(r => r.blob());
+                      const file = new File([blob], 'mi-foto-frameit.png', { type: 'image/png' });
+                      const shareData = { 
+                        title: 'FrameIt', 
+                        text: '¡Mira la foto que acabo de crear!', 
+                        files: [file] 
+                      };
+                      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+                        await navigator.share(shareData);
+                      } else {
+                        // Fallback download
+                        const link = document.createElement('a');
+                        link.download = `frameit-${Date.now()}.png`;
+                        link.href = resultImage;
+                        link.click();
+                      }
+                    } catch (e) {
+                      console.error(e);
+                    }
+                  }}
+                  className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+                >
+                  <Share2 className="w-5 h-5" /> Compartir / Guardar
+                </button>
+                <p className="text-stone-500 text-[10px] font-medium uppercase tracking-widest mt-1">
+                  💡 Tip: En Instagram, mantén presionado y elige "Guardar en Fotos"
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes popIn {
           0% { transform: translateY(30px) scale(0) rotate(-45deg); opacity: 0; }
@@ -1324,6 +1399,23 @@ export function CanvasEditor({
           from { opacity: 0; transform: translateY(20px) scale(0.95); filter: blur(4px); }
           to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes zoomIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slideInFromBottom {
+          from { transform: translateY(20px); }
+          to { transform: translateY(0); }
+        }
+        .animate-in { animation-duration: 0.3s; animation-fill-mode: both; }
+        .fade-in { animation-name: fadeIn; }
+        .zoom-in-95 { animation-name: zoomIn; }
+        .slide-in-from-bottom-10 { animation-name: slideInFromBottom; }
+
         @keyframes softPulseShadow {
           0%, 100% { box-shadow: 0 0 20px rgba(52, 211, 153, 0.4); }
           50% { box-shadow: 0 0 35px rgba(52, 211, 153, 0.8), 0 0 10px rgba(52, 211, 153, 0.4); }
