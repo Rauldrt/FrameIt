@@ -10,19 +10,22 @@ import { Home } from './components/Home';
 import { ApiKeyGuard } from './components/ApiKeyGuard';
 import { AuthProvider } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { BrowserGuard } from './components/BrowserGuard';
 
 export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
         <ApiKeyGuard>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/designer" element={<Designer />} />
-              <Route path="/app" element={<UserApp />} />
-            </Routes>
-          </BrowserRouter>
+          <BrowserGuard>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/designer" element={<Designer />} />
+                <Route path="/app" element={<UserApp />} />
+              </Routes>
+            </BrowserRouter>
+          </BrowserGuard>
         </ApiKeyGuard>
       </AuthProvider>
     </ErrorBoundary>
